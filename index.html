@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ngọc Linh Data Studio · BI Data Cleansing & Analytics Workbench</title>
+<meta name="description" content="Ngọc Linh Data Studio - BI Data Cleansing & Analytics Workbench">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@phosphor-icons/web"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="/engine.js"></script>
+<script src="/vercel-adapter.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+        serif: ['"Playfair Display"', 'Georgia', 'serif']
+      },
+      colors: {
+        canvas: '#FCF8F2',
+        shell: '#F7F1E8',
+        card: '#FFFFFF',
+        soft: '#F3ECE2',
+        ink: '#0E0907',
+        brown: { DEFAULT: '#664F41', soft: '#90735F', light: '#C9A991', deep: '#45342A' },
+        amberx: '#DD9E5E',
+        bluex: '#657DC4',
+        redx: '#C84B4B',
+        okx: '#3D7A52'
+      },
+      borderRadius: { '4xl': '26px' }
+    }
+  }
+}
+</script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+body { font-family: 'Plus Jakarta Sans', sans-serif; background: #FCF8F2; color: #0E0907; -webkit-font-smoothing: antialiased; }
+.hero-arbora {
+  background:
+    radial-gradient(110% 90% at 88% 12%, rgba(221,158,94,0.28) 0%, rgba(221,158,94,0) 55%),
+    radial-gradient(90% 80% at 8% 100%, rgba(14,9,7,0.45) 0%, rgba(14,9,7,0) 60%),
+    linear-gradient(135deg, #7B604F 0%, #664F41 52%, #47362C 100%);
+}
+.glass { background: rgba(255,255,255,0.13); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+.card-soft { background: #FFFFFF; border: 1px solid rgba(102,79,65,0.10); box-shadow: 0 12px 36px -18px rgba(14,9,7,0.10); }
+.fade-up { animation: fadeUp .45s cubic-bezier(.2,.8,.2,1) both; }
+.fade-up.d1 { animation-delay: .05s } .fade-up.d2 { animation-delay: .10s } .fade-up.d3 { animation-delay: .15s }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(12px) } to { opacity: 1; transform: none } }
+.lift { transition: transform .25s ease, box-shadow .25s ease, background .2s ease; }
+.lift:hover { transform: translateY(-2px); box-shadow: 0 16px 36px -16px rgba(14,9,7,.16); }
+.side-item { transition: all .2s ease; }
+.side-item.active { background: #FFFFFF; color: #0E0907; font-weight: 700; box-shadow: 0 6px 18px -8px rgba(102,79,65,.22); border-left: 3px solid #664F41; }
+.scroll-thin::-webkit-scrollbar { width: 6px; height: 6px }
+.scroll-thin::-webkit-scrollbar-thumb { background: #C9A991; border-radius: 9px }
+.toggle input { display: none }
+.toggle .track { transition: background .2s }
+.toggle .knob { transition: transform .2s }
+.toggle input:checked + .track { background: #664F41 }
+.toggle input:checked + .track .knob { transform: translateX(14px) }
+.toast { animation: toastIn .3s cubic-bezier(.2,.8,.2,1) both }
+@keyframes toastIn { from { opacity: 0; transform: translateY(10px) scale(.98) } to { opacity: 1; transform: none } }
+.dz-active { border-color: #664F41 !important; background: #F7F1E8 !important; transform: scale(1.005); }
+.tab-btn.active { background: #664F41; color: #FCF8F2; }
+.a4-page { width: 100%; max-width: 794px; margin: 0 auto 24px; background: #FFFFFF; padding: 48px 56px; border: 1px solid rgba(102,79,65,0.15); box-shadow: 0 14px 36px -18px rgba(14,9,7,0.16); font-family: 'Times New Roman', Georgia, serif; color: #111; line-height: 1.55; }
+.inline-cell { cursor: pointer; border-radius: 8px; padding: 4px 8px; transition: background .15s; border: 1px dashed transparent; }
+.inline-cell:hover { background: #F7F1E8; border-color: #C9A991; }
+@media print { aside, header .no-print, #toastWrap { display: none !important } body { background: #fff } }
+</style>
+</head>
+<body class="bg-canvas text-ink min-h-screen p-2.5 md:p-5">
+
+<div class="max-w-[1480px] mx-auto bg-shell/70 rounded-4xl border border-brown/10 shadow-[0_28px_80px_-38px_rgba(14,9,7,0.18)] flex min-h-[calc(100vh-40px)] overflow-hidden">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="w-[272px] flex-shrink-0 hidden lg:flex flex-col px-5 py-6 bg-shell border-r border-brown/10">
+    <div class="flex items-center gap-3 px-1 mb-6">
+      <div class="w-10 h-10 rounded-2xl bg-brown text-canvas flex items-center justify-center shadow-sm">
+        <i class="ph-fill ph-sparkle text-lg"></i>
+      </div>
+      <div>
+        <div class="text-[15px] font-extrabold tracking-tight leading-snug text-ink">Ngọc Linh Data Studio</div>
+        <div class="text-[10.5px] text-brown-soft leading-tight">BI Data Cleansing &amp; Analytics Workbench</div>
+      </div>
+    </div>
+
+    <div class="text-[10.5px] font-bold uppercase tracking-wider text-brown-soft px-2 mb-2">Quy trình nghiệp vụ BI</div>
+    <nav class="space-y-1.5" id="sideSteps">
+      <button class="side-item active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-brown hover:bg-white/70" data-step="0" onclick="goToStep(0)">
+        <i class="ph ph-house text-base flex-shrink-0"></i>
+        <span class="flex-1 text-left">
+          <span class="block leading-tight">Trang chủ</span>
+          <span class="block text-[10.5px] font-normal text-brown-soft">Giới thiệu &amp; tổng quan</span>
+        </span>
+      </button>
+      <button class="side-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-brown hover:bg-white/70" data-step="1" onclick="goToStep(1)">
+        <span class="w-5 h-5 rounded-full bg-soft text-[11px] font-bold flex items-center justify-center flex-shrink-0">1</span>
+        <span class="flex-1 text-left">
+          <span class="block leading-tight">Nhập dữ liệu</span>
+          <span class="block text-[10.5px] font-normal text-brown-soft">Google Sheets, Excel &amp; CSV</span>
+        </span>
+        <span class="w-2 h-2 rounded-full bg-brown-light" id="dot1"></span>
+      </button>
+      <button class="side-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-brown hover:bg-white/70" data-step="2" onclick="goToStep(2)">
+        <span class="w-5 h-5 rounded-full bg-soft text-[11px] font-bold flex items-center justify-center flex-shrink-0">2</span>
+        <span class="flex-1 text-left">
+          <span class="block leading-tight">Làm sạch &amp; Duyệt</span>
+          <span class="block text-[10.5px] font-normal text-brown-soft">Chuẩn hóa, ngoại lệ &amp; duyệt</span>
+        </span>
+        <span class="w-2 h-2 rounded-full bg-brown-light" id="dot2"></span>
+      </button>
+      <button class="side-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-brown hover:bg-white/70" data-step="3" onclick="goToStep(3)">
+        <span class="w-5 h-5 rounded-full bg-soft text-[11px] font-bold flex items-center justify-center flex-shrink-0">3</span>
+        <span class="flex-1 text-left">
+          <span class="block leading-tight">Phân tích &amp; Đánh giá</span>
+          <span class="block text-[10.5px] font-normal text-brown-soft">KPI, Insight &amp; khuyến nghị</span>
+        </span>
+        <span class="w-2 h-2 rounded-full bg-brown-light" id="dot3"></span>
+      </button>
+      <button class="side-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] text-brown hover:bg-white/70" data-step="4" onclick="goToStep(4)">
+        <span class="w-5 h-5 rounded-full bg-soft text-[11px] font-bold flex items-center justify-center flex-shrink-0">4</span>
+        <span class="flex-1 text-left">
+          <span class="block leading-tight">Dashboard &amp; Xuất tệp</span>
+          <span class="block text-[10.5px] font-normal text-brown-soft">Preview, Excel, Word &amp; HTML</span>
+        </span>
+        <span class="w-2 h-2 rounded-full bg-brown-light" id="dot4"></span>
+      </button>
+    </nav>
+
+    <div class="mt-6 pt-5 border-t border-brown/10">
+      <div class="text-[10.5px] font-bold uppercase tracking-wider text-brown-soft px-2 mb-2.5">Cổng kiểm duyệt &amp; Phiên</div>
+      <div class="bg-white/80 rounded-2xl p-3.5 border border-brown/10 space-y-2 text-[12px]">
+        <div class="flex items-center justify-between">
+          <span class="text-brown-soft">Kiểm duyệt dữ liệu:</span>
+          <span id="gateVerifyPill" class="px-2 py-0.5 rounded-full bg-soft text-brown font-semibold text-[11px]">Chờ duyệt</span>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-brown-soft">Đánh giá kết quả:</span>
+          <span id="gateEvalPill" class="px-2 py-0.5 rounded-full bg-soft text-brown font-semibold text-[11px]">Chờ đánh giá</span>
+        </div>
+        <div class="flex items-center justify-between pt-1 border-t border-brown/10">
+          <span class="text-brown-soft">Phiên bản dữ liệu:</span>
+          <span id="sideDataVer" class="font-bold text-ink">#1</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-auto pt-4">
+      <div class="bg-white rounded-2xl p-3.5 border border-brown/10 flex items-center gap-3 cursor-pointer hover:shadow-sm transition" onclick="goToStep(1)">
+        <div class="w-9 h-9 rounded-xl bg-soft text-brown flex items-center justify-center flex-shrink-0"><i class="ph-fill ph-database text-lg"></i></div>
+        <div class="min-w-0 flex-1">
+          <div id="sideFileTitle" class="text-[12.5px] font-bold truncate">Chưa có tệp</div>
+          <div id="sideFileSub" class="text-[11px] text-brown-soft truncate">Chờ tải dữ liệu</div>
+        </div>
+      </div>
+      <button onclick="resetAll()" class="mt-2.5 w-full py-2 rounded-xl bg-soft hover:bg-brown-light/30 text-brown text-[12px] font-semibold flex items-center justify-center gap-1.5 transition">
+        <i class="ph ph-arrows-clockwise"></i> Làm mới phiên làm việc
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <div class="flex-1 flex flex-col min-w-0 bg-canvas">
+
+    <!-- Top Header -->
+    <header class="px-5 md:px-8 pt-5 pb-3.5 flex flex-wrap items-center justify-between gap-3 border-b border-brown/10 bg-canvas/90 backdrop-blur sticky top-0 z-30">
+      <div class="flex items-center gap-3">
+        <div class="lg:hidden flex items-center gap-2">
+          <select onchange="goToStep(parseInt(this.value))" id="mobileNavSelect" class="bg-white border border-brown/15 rounded-xl px-3 py-1.5 text-[12.5px] font-semibold">
+            <option value="0">Trang chủ</option>
+            <option value="1">1. Nhập dữ liệu</option>
+            <option value="2">2. Làm sạch &amp; Duyệt</option>
+            <option value="3">3. Phân tích &amp; Đánh giá</option>
+            <option value="4">4. Dashboard &amp; Xuất tệp</option>
+          </select>
+        </div>
+        <div>
+          <h1 id="pageHeaderTitle" class="text-[18px] md:text-[20px] font-extrabold tracking-tight text-ink">Trang chủ · Ngọc Linh Data Studio</h1>
+          <p id="pageHeaderSub" class="text-[12px] text-brown-soft">Nền tảng làm sạch dữ liệu, phân tích BI và xuất báo cáo quản trị chuyên nghiệp</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2.5 no-print">
+        <button id="headerStepActionBtn" onclick="goToStep(1)" class="px-4 py-2 rounded-full bg-brown hover:bg-ink text-canvas text-[12.5px] font-semibold transition flex items-center gap-1.5">
+          <i class="ph ph-arrow-right"></i> <span>Bắt đầu nhập dữ liệu</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Global Progress Banner (Hidden when idle) -->
+    <div id="globalProgressBar" class="hidden mx-5 md:mx-8 mt-4 bg-white rounded-2xl p-4 border border-brown/15 shadow-sm fade-up">
+      <div class="flex items-center justify-between text-[12.5px] mb-2">
+        <div class="flex items-center gap-2 font-bold text-ink">
+          <span class="w-2.5 h-2.5 rounded-full bg-amberx animate-pulse"></span>
+          <span id="progStageText">Đang đọc dữ liệu...</span>
+        </div>
+        <div class="text-brown-soft font-medium tabular-nums">
+          <span id="progRowText">0 / 0 dòng</span> · <span id="progPctText">0%</span> · <span id="progTimeText">0ms</span>
+        </div>
+      </div>
+      <div class="h-2 rounded-full bg-soft overflow-hidden">
+        <div id="progBarFill" class="h-full bg-gradient-to-r from-brown to-amberx transition-all duration-200" style="width:0%"></div>
+      </div>
+    </div>
+
+    <main class="flex-1 px-5 md:px-8 py-6 space-y-6 overflow-y-auto scroll-thin">
+
+      <!-- ============ VIEW 0: TRANG CHỦ ============ -->
+      <section id="view0" class="space-y-6">
+        <div class="hero-arbora rounded-4xl p-8 md:p-11 text-canvas shadow-lg fade-up">
+          <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass text-[11.5px] font-semibold tracking-wide mb-5">
+            <i class="ph-fill ph-sparkle text-amberx"></i> MODERN EDITORIAL BI · DATA CLEANSING &amp; ANALYTICS WORKBENCH
+          </div>
+          <h2 class="font-serif text-[32px] md:text-[42px] leading-[1.15] font-bold max-w-3xl">
+            Chào mừng đến với Ngọc Linh Data Studio
+          </h2>
+          <p class="mt-3 text-[15px] md:text-[16px] text-canvas/90 max-w-3xl leading-relaxed">
+            <strong>Ngọc Linh Data Studio</strong> là trợ lý AI Agent chuyên biệt trong lĩnh vực Business Intelligence, giúp doanh nghiệp tự động hóa toàn bộ quy trình biến dữ liệu bán hàng thô (CSV, Excel, Google Sheets) thành thông tin quản trị đáng tin cậy.
+          </p>
+          <p class="mt-2.5 text-[14px] md:text-[15px] text-canvas/80 max-w-3xl leading-relaxed">
+            Agent tự động kiểm tra cấu trúc đầu vào, phát hiện và khử trùng lặp giao dịch, loại bỏ đơn hủy/lỗi, đối soát hoàn trả, đồng thời hỗ trợ chuyên viên chỉnh sửa ngoại lệ và phê duyệt trực tiếp trước khi phân tích KPI, tìm nguyên nhân bất thường và xuất báo cáo chuẩn doanh nghiệp.
+          </p>
+          <div class="mt-7 flex flex-wrap gap-3">
+            <button onclick="goToStep(1)" class="px-6 py-3 rounded-full bg-amberx hover:bg-white text-ink font-bold text-[13.5px] transition flex items-center gap-2 shadow">
+              Bắt đầu Quy trình BI <i class="ph ph-arrow-right"></i>
+            </button>
+            <button onclick="document.getElementById('homeWorkflowGrid').scrollIntoView({behavior:'smooth'})" class="px-5 py-3 rounded-full glass hover:bg-white/20 text-canvas font-semibold text-[13.5px] transition">
+              Xem quy trình 4 bước
+            </button>
+          </div>
+        </div>
+
+        <div id="homeWorkflowGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 fade-up d1">
+          <div class="card-soft rounded-3xl p-5 lift cursor-pointer" onclick="goToStep(1)">
+            <div class="w-10 h-10 rounded-2xl bg-soft text-brown flex items-center justify-center font-bold mb-3">01</div>
+            <h3 class="font-bold text-[15px]">Nhập dữ liệu</h3>
+            <p class="text-[12.5px] text-brown-soft mt-1.5 leading-relaxed">Kết nối Google Sheets hoặc tải tệp CSV, XLSX, XLS. Hỗ trợ xử lý theo batch/stream lên tới 60.000+ dòng, kiểm tra cấu trúc &amp; cảnh báo lỗi sớm.</p>
+          </div>
+          <div class="card-soft rounded-3xl p-5 lift cursor-pointer" onclick="goToStep(2)">
+            <div class="w-10 h-10 rounded-2xl bg-soft text-brown flex items-center justify-center font-bold mb-3">02</div>
+            <h3 class="font-bold text-[15px]">Làm sạch &amp; Duyệt</h3>
+            <p class="text-[12.5px] text-brown-soft mt-1.5 leading-relaxed">Khử trùng, loại đơn hủy, đối soát hoàn trả, tính doanh thu thực tế. Chỉnh sửa trực tiếp tại ô kèm nhật ký &amp; khôi phục.</p>
+          </div>
+          <div class="card-soft rounded-3xl p-5 lift cursor-pointer" onclick="goToStep(3)">
+            <div class="w-10 h-10 rounded-2xl bg-soft text-brown flex items-center justify-center font-bold mb-3">03</div>
+            <h3 class="font-bold text-[15px]">Phân tích &amp; Đánh giá</h3>
+            <p class="text-[12.5px] text-brown-soft mt-1.5 leading-relaxed">Phân tích 7 nhóm chỉ số tài chính, xu hướng tăng trưởng, Insight theo cấu trúc Hiện tượng → Bằng chứng → Phân tích → Tác động → Khuyến nghị.</p>
+          </div>
+          <div class="card-soft rounded-3xl p-5 lift cursor-pointer" onclick="goToStep(4)">
+            <div class="w-10 h-10 rounded-2xl bg-soft text-brown flex items-center justify-center font-bold mb-3">04</div>
+            <h3 class="font-bold text-[15px]">Dashboard &amp; Xuất tệp</h3>
+            <p class="text-[12.5px] text-brown-soft mt-1.5 leading-relaxed">Preview Center 3 tab (Excel 6 sheets, Word A4, Dashboard HTML tương tác) và tải thực tế cả 3 định dạng từ cùng 1 phiên dữ liệu.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VIEW 1: BƯỚC 1 - NHẬP DỮ LIỆU ============ -->
+      <section id="view1" class="hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <!-- Business Model + Upload Dropzone -->
+          <div class="lg:col-span-7 card-soft rounded-3xl p-6 space-y-5 fade-up">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 class="text-[17px] font-extrabold">Kết nối &amp; Tải bộ dữ liệu doanh nghiệp</h2>
+                <p class="text-[12.5px] text-brown-soft">Hỗ trợ CSV, XLSX, XLS, JSON · Tối ưu xử lý tệp lớn 60.000+ dòng</p>
+              </div>
+              <button onclick="downloadTemplate()" class="px-3.5 py-2 rounded-full bg-soft hover:bg-brown-light/30 text-brown text-[12px] font-semibold transition flex items-center gap-1.5">
+                <i class="ph ph-download-simple"></i> Tải mẫu CSV chuẩn
+              </button>
+            </div>
+
+            <!-- Business Model Selector -->
+            <div>
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-brown-soft mb-2">Lựa chọn mô hình kinh doanh</label>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="bizModelGroup">
+                <button type="button" onclick="selectBizModel(this, 'Bán lẻ đa kênh')" class="biz-btn active px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown bg-brown text-canvas text-left">Bán lẻ đa kênh</button>
+                <button type="button" onclick="selectBizModel(this, 'Thương mại điện tử')" class="biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft">Thương mại điện tử</button>
+                <button type="button" onclick="selectBizModel(this, 'Kho vận')" class="biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft">Kho vận</button>
+                <button type="button" onclick="selectBizModel(this, 'B2B')" class="biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft">B2B</button>
+                <button type="button" onclick="selectBizModel(this, 'Dịch vụ & F&B')" class="biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft">Dịch vụ &amp; F&amp;B</button>
+                <button type="button" onclick="selectBizModel(this, 'Công nghệ')" class="biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft">Công nghệ</button>
+                <button type="button" onclick="selectBizModel(this, '__OTHER__')" class="biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft">+ Khác</button>
+              </div>
+              <div id="customBizModelWrap" class="hidden mt-2.5 flex gap-2">
+                <input id="customBizModelInput" type="text" placeholder="Nhập mô hình kinh doanh của bạn (VD: Y tế, Giáo dục, Sản xuất...)" onkeydown="if(event.key==='Enter'){event.preventDefault();saveCustomBizModel();}" class="flex-1 bg-canvas border border-brown/20 rounded-xl px-3.5 py-2 text-[12.5px] outline-none focus:border-brown">
+                <button type="button" onclick="saveCustomBizModel()" class="px-4 py-2 rounded-xl bg-brown hover:bg-ink text-canvas text-[12px] font-bold transition">Áp dụng</button>
+              </div>
+            </div>
+
+            <!-- Dropzone -->
+            <div id="dropzone" class="border-2 border-dashed border-brown/25 rounded-2xl p-7 text-center bg-canvas/70 hover:bg-shell transition cursor-pointer" onclick="document.getElementById('fileInput').click()">
+              <input type="file" id="fileInput" accept=".csv,.xlsx,.xls,.json" class="hidden" onchange="handleFileSelect(this.files[0])">
+              <div class="w-12 h-12 rounded-2xl bg-soft text-brown mx-auto flex items-center justify-center mb-3">
+                <i class="ph ph-cloud-arrow-up text-2xl"></i>
+              </div>
+              <div class="font-bold text-[14px]">Kéo thả tệp CSV / Excel vào đây hoặc nhấp để chọn từ máy</div>
+              <div class="text-[12px] text-brown-soft mt-1">Hệ thống tự động stream CSV hoặc chia batch XLSX để không treo trình duyệt ở quy mô 60.000+ dòng</div>
+            </div>
+
+            <!-- Google Sheets Connect -->
+            <div class="pt-2 border-t border-brown/10">
+              <label class="block text-[11px] font-bold uppercase tracking-wider text-brown-soft mb-2">Hoặc đồng bộ từ Google Sheets (Link chia sẻ công khai CSV)</label>
+              <div class="flex gap-2">
+                <input id="gsheetUrl" type="url" placeholder="https://docs.google.com/spreadsheets/d/.../edit" class="flex-1 bg-canvas border border-brown/15 rounded-xl px-3.5 py-2 text-[12.5px] outline-none focus:border-brown">
+                <button onclick="connectGoogleSheet()" class="px-4 py-2 rounded-xl bg-ink hover:bg-brown text-canvas text-[12.5px] font-semibold transition">Đồng bộ</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- File Diagnostics & Stats -->
+          <div class="lg:col-span-5 card-soft rounded-3xl p-6 flex flex-col justify-between space-y-4 fade-up d1">
+            <div>
+              <div class="flex items-center justify-between mb-3">
+                <h3 class="text-[15px] font-extrabold">Kiểm tra cấu trúc &amp; Nguồn dữ liệu</h3>
+                <span id="step1StatusPill" class="px-2.5 py-1 rounded-full bg-soft text-brown text-[11px] font-semibold">Chưa có tệp</span>
+              </div>
+              <div id="uploadedFilesList" class="space-y-2 max-h-[210px] overflow-y-auto scroll-thin">
+                <div class="text-[12.5px] text-brown-soft py-6 text-center bg-canvas rounded-2xl">Chưa có tệp dữ liệu nào được tải lên.</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2.5 pt-2 border-t border-brown/10">
+              <div class="bg-canvas rounded-2xl p-3">
+                <div class="text-[11px] text-brown-soft">Tổng số dòng</div>
+                <div id="rawStatTotal" class="text-[18px] font-extrabold mt-0.5 tabular-nums">0</div>
+              </div>
+              <div class="bg-canvas rounded-2xl p-3">
+                <div class="text-[11px] text-brown-soft">Đơn trùng / Hủy</div>
+                <div id="rawStatIssues" class="text-[18px] font-extrabold mt-0.5 tabular-nums text-amberx">0</div>
+              </div>
+              <div class="bg-canvas rounded-2xl p-3">
+                <div class="text-[11px] text-brown-soft">Chi nhánh / SKU</div>
+                <div id="rawStatDims" class="text-[15px] font-bold mt-1 tabular-nums">0 CN · 0 SKU</div>
+              </div>
+              <div class="bg-canvas rounded-2xl p-3">
+                <div class="text-[11px] text-brown-soft">Giá trị thô ước tính</div>
+                <div id="rawStatGross" class="text-[15px] font-bold mt-1 tabular-nums">0 đ</div>
+              </div>
+            </div>
+
+            <button id="btnGoStep2" onclick="goToStep(2)" disabled class="w-full py-3 rounded-full bg-brown disabled:opacity-40 hover:bg-ink text-canvas font-bold text-[13px] transition flex items-center justify-center gap-2">
+              Tiếp tục Bước 2: Làm sạch &amp; Duyệt <i class="ph ph-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Column Structure + Paginated Raw Preview -->
+        <div class="card-soft rounded-3xl p-6 space-y-4 fade-up d2">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="text-[15px] font-extrabold">Xem trước dữ liệu thô (Phân trang Server-side)</h3>
+              <p class="text-[12px] text-brown-soft" id="rawColumnsSummary">Tự động nhận diện cột chuẩn BI khi tải tệp</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <input id="rawSearchInput" type="text" placeholder="Tìm mã đơn, sản phẩm, chi nhánh..." oninput="debouncedLoadRawPage(1)" class="bg-canvas border border-brown/15 rounded-xl px-3 py-1.5 text-[12px] w-56 outline-none focus:border-brown">
+            </div>
+          </div>
+          <div class="overflow-x-auto scroll-thin">
+            <table class="w-full text-[12.5px]">
+              <thead>
+                <tr class="border-b border-brown/10 text-brown-soft text-[11px] uppercase">
+                  <th class="py-2.5 pr-3 text-left">Mã đơn</th>
+                  <th class="py-2.5 pr-3 text-left">Ngày</th>
+                  <th class="py-2.5 pr-3 text-left">Chi nhánh</th>
+                  <th class="py-2.5 pr-3 text-left">SKU</th>
+                  <th class="py-2.5 pr-3 text-left">Tên sản phẩm</th>
+                  <th class="py-2.5 pr-3 text-right">SL</th>
+                  <th class="py-2.5 pr-3 text-right">Đơn giá</th>
+                  <th class="py-2.5 pr-3 text-right">Giá vốn</th>
+                  <th class="py-2.5 text-left">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="rawPreviewBody">
+                <tr><td colspan="9" class="py-10 text-center text-brown-soft">Chưa có dữ liệu.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-between text-[12px] text-brown-soft pt-2 border-t border-brown/10">
+            <span id="rawPageInfo">Trang 1 / 1 (0 dòng)</span>
+            <div class="flex gap-1.5">
+              <button onclick="loadRawPage(rawPage - 1)" class="px-3 py-1 rounded-lg bg-soft hover:bg-brown-light/30 font-semibold">Trước</button>
+              <button onclick="loadRawPage(rawPage + 1)" class="px-3 py-1 rounded-lg bg-soft hover:bg-brown-light/30 font-semibold">Sau</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VIEW 2: BƯỚC 2 - LÀM SẠCH & DUYỆT ============ -->
+      <section id="view2" class="hidden space-y-5">
+        <!-- Header Row matching reference -->
+        <div class="flex flex-wrap items-start justify-between gap-4 fade-up">
+          <div>
+            <span class="inline-block px-3 py-1 rounded-full bg-amberx/20 border border-amberx/40 text-brown font-bold text-[11px] uppercase tracking-wider mb-2">BƯỚC 2 · LÀM SẠCH &amp; DUYỆT</span>
+            <h2 class="font-serif text-[28px] md:text-[32px] font-bold leading-tight text-ink">Làm sạch &amp; Duyệt dữ liệu</h2>
+            <p class="text-[13px] text-brown-soft mt-1 max-w-2xl">Hệ thống chuẩn hóa dữ liệu theo ưu tiên khử trùng lặp, hiển thị các bản ghi ngoại lệ để chỉnh sửa trực tiếp tại bảng và chờ chuyên viên phê duyệt.</p>
+          </div>
+          <button onclick="executeDataCleaning()" class="px-5 py-2.5 rounded-xl bg-amberx hover:bg-brown hover:text-canvas text-ink text-[13px] font-bold transition shadow-sm flex items-center gap-2">
+            <i class="ph-fill ph-lightning"></i> Chạy lại làm sạch
+          </button>
+        </div>
+
+        <!-- 4 Cleaning Rule Checkboxes -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 fade-up d1">
+          <label class="card-soft rounded-2xl p-3.5 flex items-start gap-3 cursor-pointer hover:border-brown/30 transition">
+            <input type="checkbox" id="chkDup" checked class="mt-1 w-4 h-4 accent-[#664F41] rounded">
+            <div>
+              <div class="text-[13px] font-bold text-ink">Khử trùng mã GD</div>
+              <div class="text-[11px] text-brown-soft">Ưu tiên lọc trùng lặp trước</div>
+            </div>
+          </label>
+          <label class="card-soft rounded-2xl p-3.5 flex items-start gap-3 cursor-pointer hover:border-brown/30 transition">
+            <input type="checkbox" id="chkCancel" checked class="mt-1 w-4 h-4 accent-[#664F41] rounded">
+            <div>
+              <div class="text-[13px] font-bold text-ink">Loại đơn hủy / Void</div>
+              <div class="text-[11px] text-brown-soft">Không tính vào doanh thu</div>
+            </div>
+          </label>
+          <label class="card-soft rounded-2xl p-3.5 flex items-start gap-3 cursor-pointer hover:border-brown/30 transition">
+            <input type="checkbox" id="chkReturn" checked class="mt-1 w-4 h-4 accent-[#664F41] rounded">
+            <div>
+              <div class="text-[13px] font-bold text-ink">Đối soát hoàn trả</div>
+              <div class="text-[11px] text-brown-soft">Khớp hóa đơn gốc hợp lệ</div>
+            </div>
+          </label>
+          <label class="card-soft rounded-2xl p-3.5 flex items-start gap-3 cursor-pointer hover:border-brown/30 transition">
+            <input type="checkbox" id="chkNorm" checked class="mt-1 w-4 h-4 accent-[#664F41] rounded">
+            <div>
+              <div class="text-[13px] font-bold text-ink">Chuẩn hóa kỳ &amp; ô trống</div>
+              <div class="text-[11px] text-brown-soft">Cắt khoảng trắng &amp; kỳ báo cáo</div>
+            </div>
+          </label>
+        </div>
+
+        <!-- 4 KPI Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 fade-up d1">
+          <div class="card-soft rounded-2xl p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-brown-soft">Tổng dòng thô</div>
+            <div id="cleanRawN" class="text-[28px] font-extrabold text-ink mt-1 tabular-nums">0</div>
+            <div class="text-[11.5px] text-brown-soft mt-1">Dữ liệu đầu vào nguyên bản</div>
+          </div>
+          <div class="rounded-2xl p-4 bg-amberx/15 border border-amberx/45 shadow-sm">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-brown">Số dữ liệu đã được làm sạch</div>
+            <div id="cleanCleanN" class="text-[28px] font-extrabold text-okx mt-1 tabular-nums">0</div>
+            <div class="text-[11.5px] text-brown mt-1">DT thực tế: <strong id="cleanActualRev">0 đ</strong> · GMV: <strong id="cleanGmv">0 đ</strong></div>
+          </div>
+          <div class="card-soft rounded-2xl p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-brown-soft">Dòng ngoại lệ đã loại</div>
+            <div id="cleanExcludedN" class="text-[28px] font-extrabold text-redx mt-1 tabular-nums">0</div>
+            <div id="cleanExcludedPct" class="text-[11.5px] text-brown-soft mt-1">Chiếm 0.0% tổng dữ liệu</div>
+          </div>
+          <div class="card-soft rounded-2xl p-4">
+            <div class="text-[11px] font-bold uppercase tracking-wider text-brown-soft">Tỷ lệ đổi trả thực tế</div>
+            <div id="cleanReturnRate" class="text-[28px] font-extrabold text-brown mt-1 tabular-nums">0%</div>
+            <div id="cleanReturnNote" class="text-[11.5px] text-brown-soft mt-1">Ngưỡng chuẩn BI: ≤ 1.80%</div>
+          </div>
+        </div>
+
+        <!-- Inline Editable Exceptions Table -->
+        <div class="card-soft rounded-3xl p-6 space-y-4 fade-up d2">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 class="text-[16px] font-extrabold text-ink">Bảng ngoại lệ &amp; Chỉnh sửa trực tiếp tại ô</h3>
+              <p class="text-[12.5px] text-brown-soft mt-0.5">Nhấp sửa trực tiếp Mã đơn, Đơn vị/Chi nhánh, Ngày hoặc Trạng thái rồi bấm Lưu.</p>
+              <span class="inline-block mt-2.5 px-3 py-1 rounded-full bg-amberx/15 text-brown text-[11px] font-bold">Ưu tiên lọc trùng lặp trước — Loại đơn hủy sau</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" onclick="setExFilter('ALL', this)" class="ex-filter-pill px-3.5 py-1.5 rounded-full text-[12px] font-bold bg-amberx/25 border border-amberx text-ink">Tất cả</button>
+              <button type="button" onclick="setExFilter('DUPLICATE', this)" class="ex-filter-pill px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-canvas border border-brown/15 text-brown hover:bg-soft">Trùng mã</button>
+              <button type="button" onclick="setExFilter('CANCELLED', this)" class="ex-filter-pill px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-canvas border border-brown/15 text-brown hover:bg-soft">Đơn hủy</button>
+              <button type="button" onclick="setExFilter('MISSING_OR_INVALID', this)" class="ex-filter-pill px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-canvas border border-brown/15 text-brown hover:bg-soft">Khác / Lệch kỳ</button>
+              <input id="exSearchInput" type="text" placeholder="Tìm ngoại lệ..." oninput="debouncedLoadExceptions(1)" class="ml-1 bg-canvas border border-brown/15 rounded-full px-3 py-1.5 text-[12px] w-40 outline-none focus:border-brown">
+            </div>
+          </div>
+
+          <div class="overflow-x-auto scroll-thin border border-brown/10 rounded-2xl">
+            <table class="w-full text-[12.5px]">
+              <thead class="bg-shell">
+                <tr class="border-b border-brown/10 text-ink text-[11.5px] font-bold">
+                  <th class="py-3 px-3 text-left">Mã GD</th>
+                  <th class="py-3 px-3 text-left">Mã Đơn / Phụ Trách</th>
+                  <th class="py-3 px-3 text-left">Đơn Vị / Chi Nhánh (*)</th>
+                  <th class="py-3 px-3 text-left">Ngày GD</th>
+                  <th class="py-3 px-3 text-left">Mã Lỗi</th>
+                  <th class="py-3 px-3 text-left">Nguyên Nhân</th>
+                  <th class="py-3 px-3 text-left">Trạng Thái</th>
+                  <th class="py-3 px-3 text-right">Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="exceptionsTableBody">
+                <tr><td colspan="8" class="py-8 text-center text-brown-soft">Không có bản ghi ngoại lệ nào trong nhóm lọc này.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="flex items-center justify-between text-[12px] text-brown-soft pt-1">
+            <span id="exPageInfo">Trang 1 / 1 (0 ngoại lệ)</span>
+            <div class="flex gap-1.5">
+              <button onclick="loadExceptionsPage(exPage - 1)" class="px-3 py-1 rounded-lg bg-soft hover:bg-brown-light/30 font-semibold">Trước</button>
+              <button onclick="loadExceptionsPage(exPage + 1)" class="px-3 py-1 rounded-lg bg-soft hover:bg-brown-light/30 font-semibold">Sau</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Logs + Cleaned Data Preview + Approval Gate -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+          <div class="lg:col-span-7 card-soft rounded-3xl p-6 space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-[15px] font-extrabold">Dữ liệu sạch sau chuẩn hóa (<span id="cleanedCountBadge">0</span> dòng)</h3>
+              <input id="cleanedSearchInput" type="text" placeholder="Tìm dữ liệu sạch..." oninput="debouncedLoadCleaned(1)" class="bg-canvas border border-brown/15 rounded-xl px-3 py-1.5 text-[12px] w-48 outline-none">
+            </div>
+            <div class="overflow-x-auto scroll-thin max-h-[300px]">
+              <table class="w-full text-[12px]">
+                <thead>
+                  <tr class="border-b border-brown/10 text-brown-soft text-[10.5px] uppercase">
+                    <th class="py-2 pr-2 text-left">Mã đơn</th>
+                    <th class="py-2 pr-2 text-left">Chi nhánh</th>
+                    <th class="py-2 pr-2 text-left">Sản phẩm</th>
+                    <th class="py-2 pr-2 text-right">DT Thuần</th>
+                    <th class="py-2 pr-2 text-right">LN Gộp</th>
+                    <th class="py-2 text-left">Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody id="cleanedTableBody"></tbody>
+              </table>
+            </div>
+            <div class="flex items-center justify-between text-[11.5px] text-brown-soft pt-2 border-t border-brown/10">
+              <span id="cleanedPageInfo">Trang 1 / 1</span>
+              <div class="flex gap-1.5">
+                <button onclick="loadCleanedPage(cleanedPage - 1)" class="px-2.5 py-1 rounded-lg bg-soft font-semibold">Trước</button>
+                <button onclick="loadCleanedPage(cleanedPage + 1)" class="px-2.5 py-1 rounded-lg bg-soft font-semibold">Sau</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-5">
+            <div class="card-soft rounded-3xl p-5 space-y-3">
+              <div class="flex items-center justify-between">
+                <h3 class="text-[14px] font-extrabold">Nhật ký chỉnh sửa trực tiếp</h3>
+                <span id="editLogCountBadge" class="px-2 py-0.5 rounded-full bg-soft text-brown text-[11px] font-bold">0</span>
+              </div>
+              <div id="editLogsList" class="space-y-2 max-h-[165px] overflow-y-auto scroll-thin text-[12px]">
+                <div class="text-brown-soft py-4 text-center">Chưa có chỉnh sửa nào trong phiên.</div>
+              </div>
+            </div>
+
+            <div class="card-soft rounded-3xl p-5 space-y-3">
+              <h3 class="text-[14px] font-extrabold">Cổng kiểm duyệt dữ liệu</h3>
+              <p class="text-[12px] text-brown-soft">Chỉ dữ liệu đã được phê duyệt mới được đưa vào phân tích chính thức và xuất báo cáo.</p>
+              <div class="flex gap-2.5">
+                <button id="btnApprove" onclick="verifyCleaning(true)" disabled class="flex-1 py-2.5 rounded-full bg-brown disabled:opacity-40 hover:bg-okx text-canvas text-[12.5px] font-bold transition">Phê duyệt dữ liệu</button>
+                <button onclick="verifyCleaning(false)" class="px-4 py-2.5 rounded-full bg-soft hover:bg-redx hover:text-white text-brown text-[12.5px] font-semibold transition">Từ chối</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VIEW 3: BƯỚC 3 - PHÂN TÍCH & ĐÁNH GIÁ ============ -->
+      <section id="view3" class="hidden space-y-6">
+        <!-- Header Row -->
+        <div class="flex flex-wrap items-start justify-between gap-4 fade-up">
+          <div>
+            <span class="inline-block px-3 py-1 rounded-full bg-amberx/20 border border-amberx/40 text-brown font-bold text-[11px] uppercase tracking-wider mb-2">BƯỚC 3 · PHÂN TÍCH DỮ LIỆU &amp; ĐÁNH GIÁ</span>
+            <h2 class="font-serif text-[28px] md:text-[32px] font-bold leading-tight text-ink">Phân tích Insight tổng quát doanh nghiệp</h2>
+            <p class="text-[13px] text-brown-soft mt-1 max-w-2xl">Hệ thống tự động tổng hợp 6 khối Insight quản trị cốt lõi và biểu đồ BI trực quan từ dữ liệu sạch thực tế.</p>
+          </div>
+          <button onclick="fetchDashboardAnalysis()" class="px-4 py-2 rounded-xl bg-white border border-brown/15 hover:bg-soft text-brown text-[12.5px] font-bold transition shadow-sm flex items-center gap-1.5">
+            <i class="ph ph-arrows-clockwise"></i> Cập nhật lại Insight
+          </button>
+        </div>
+
+        <!-- 6 Insight Cards (2x3 Grid) -->
+        <div id="sixInsightsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-4 fade-up d1"></div>
+
+        <!-- Collapsible Ranking Table -->
+        <div class="card-soft rounded-2xl overflow-hidden fade-up d1">
+          <button type="button" onclick="toggleRankingTable()" class="w-full px-5 py-3.5 flex items-center justify-between bg-canvas/70 hover:bg-soft/70 transition">
+            <span class="text-[13px] font-bold text-ink flex items-center gap-2">
+              <i class="ph ph-table text-brown"></i> Xem Bảng Xếp Hạng Hiệu Suất Chi Tiết Theo Đơn Vị / Nhóm Dữ Liệu
+            </span>
+            <span class="px-3 py-1 rounded-full bg-amberx/20 text-brown text-[11px] font-bold">Nhấp để mở / thu gọn</span>
+          </button>
+          <div id="rankingTableWrap" class="hidden p-5 border-t border-brown/10 overflow-x-auto">
+            <table class="w-full text-[12.5px]">
+              <thead>
+                <tr class="border-b border-brown/10 text-brown-soft text-[11px] uppercase">
+                  <th class="py-2 pr-3 text-left">Đơn vị / Chi nhánh</th>
+                  <th class="py-2 pr-3 text-right">Số đơn</th>
+                  <th class="py-2 pr-3 text-right">Doanh thu thuần</th>
+                  <th class="py-2 pr-3 text-right">Lợi nhuận gộp</th>
+                  <th class="py-2 pr-3 text-right">Biên LN</th>
+                  <th class="py-2 pr-3 text-right">Tỷ lệ hoàn</th>
+                  <th class="py-2 text-left">Đánh giá</th>
+                </tr>
+              </thead>
+              <tbody id="rankingTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Bento BI Charts Grid (KPI Rings + Grouped Bar + Area Chart + Donut Chart) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 fade-up d2">
+          <!-- Left: Data Cleanliness + KPI Rings -->
+          <div class="lg:col-span-4 space-y-4">
+            <div class="rounded-3xl p-5 bg-amberx/15 border border-amberx/40 flex items-center justify-between">
+              <div>
+                <div id="bentoCleanPct" class="text-[36px] font-extrabold text-brown leading-none tabular-nums">100%</div>
+                <div class="text-[14px] font-bold text-ink mt-1">Độ Sạch Dữ Liệu</div>
+                <div id="bentoCleanSub" class="text-[12px] text-brown-soft mt-0.5">0 dòng hợp lệ · Đổi trả 0%</div>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-amberx text-2xl">
+                <i class="ph-fill ph-sparkle"></i>
+              </div>
+            </div>
+
+            <div class="card-soft rounded-3xl p-5 space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-[14px] font-extrabold text-ink">Tiến Độ Chỉ Số BI</h3>
+                <span class="px-2.5 py-0.5 rounded-full bg-amberx/15 text-brown text-[10.5px] font-bold">KPI Rings</span>
+              </div>
+              <div id="kpiRingsBox" class="space-y-3.5"></div>
+            </div>
+          </div>
+
+          <!-- Right: Grouped Bar Chart -->
+          <div class="lg:col-span-8 card-soft rounded-3xl p-6 flex flex-col justify-between">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div>
+                <h3 class="text-[15px] font-extrabold text-ink">Doanh Thu Thực Tế vs Doanh Thu Gộp (GMV) Theo Đơn Vị</h3>
+                <div class="flex items-center gap-4 text-[11.5px] text-brown-soft mt-1">
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amberx inline-block"></span> Doanh thu thuần thực tế</span>
+                  <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-brown inline-block"></span> Doanh thu gộp (GMV)</span>
+                </div>
+              </div>
+              <span class="text-[11.5px] text-brown-soft font-semibold">Đơn vị: Triệu VNĐ</span>
+            </div>
+            <div id="groupedBarChartBox" class="w-full"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Bento Row: Area Chart + Donut Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 fade-up d2">
+          <div class="lg:col-span-6 card-soft rounded-3xl p-6">
+            <div class="flex items-center justify-between mb-3">
+              <h3 id="areaChartTitle" class="text-[15px] font-extrabold text-ink">Xu Hướng Lợi Nhuận / Doanh Thu Theo Đơn Vị</h3>
+              <span class="text-[11.5px] text-brown-soft font-semibold">Triệu VNĐ</span>
+            </div>
+            <div id="smoothAreaChartBox" class="w-full"></div>
+          </div>
+
+          <div class="lg:col-span-6 card-soft rounded-3xl p-6">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-[15px] font-extrabold text-ink">Cơ Cấu Doanh Thu Theo Danh Mục / Sản Phẩm</h3>
+              <span class="text-[11.5px] text-brown-soft font-semibold">Tỷ trọng (%)</span>
+            </div>
+            <div id="donutChartBox" class="flex flex-col sm:flex-row items-center gap-6"></div>
+          </div>
+        </div>
+
+        <!-- Anomalies + Q&A Copilot + Evaluation Gate -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 fade-up d3">
+          <div class="lg:col-span-7 card-soft rounded-3xl p-6 space-y-3">
+            <h3 class="text-[15px] font-extrabold">Điểm bất thường phát hiện tự động</h3>
+            <div id="anomaliesBox" class="space-y-2"></div>
+          </div>
+
+          <div class="lg:col-span-5 space-y-5">
+            <div class="card-soft rounded-3xl p-5 space-y-3">
+              <h3 class="text-[15px] font-extrabold flex items-center gap-2"><i class="ph-fill ph-sparkle text-amberx"></i> Trợ lý Phân tích BI (Q&amp;A)</h3>
+              <div id="chatThread" class="space-y-2.5 max-h-[200px] overflow-y-auto scroll-thin bg-canvas rounded-2xl p-3 text-[12.5px]">
+                <div class="text-brown-soft">Đặt câu hỏi về doanh thu, chi nhánh, sản phẩm hoàn trả hoặc bất thường...</div>
+              </div>
+              <div class="flex gap-2">
+                <input id="analystQueryInput" type="text" placeholder="VD: Chi nhánh nào hoàn hàng cao nhất?" onkeydown="if(event.key==='Enter')submitAnalystQuery()" class="flex-1 bg-canvas border border-brown/15 rounded-xl px-3 py-2 text-[12.5px] outline-none">
+                <button onclick="submitAnalystQuery()" class="px-4 py-2 rounded-xl bg-brown hover:bg-ink text-canvas text-[12.5px] font-semibold">Hỏi</button>
+              </div>
+            </div>
+
+            <div class="card-soft rounded-3xl p-5 space-y-3">
+              <h3 class="text-[14px] font-extrabold">Đánh giá kết quả trước khi xuất</h3>
+              <div class="flex gap-2.5">
+                <button onclick="evaluateAnalysis(true)" class="flex-1 py-2.5 rounded-full bg-brown hover:bg-okx text-canvas text-[12.5px] font-bold transition">Đánh giá đạt chuẩn</button>
+                <button onclick="goToStep(4)" class="px-5 py-2.5 rounded-full bg-amberx hover:bg-ink hover:text-canvas text-ink text-[12.5px] font-bold transition">Mở Preview &amp; Xuất tệp →</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============ VIEW 4: BƯỚC 4 - DASHBOARD & XUẤT TỆP (PREVIEW CENTER) ============ -->
+      <section id="view4" class="hidden space-y-6">
+        <!-- Session Sync Header -->
+        <div class="card-soft rounded-3xl p-5 flex flex-wrap items-center justify-between gap-4 fade-up">
+          <div>
+            <div class="text-[11px] font-bold uppercase tracking-wider text-brown-soft">Đồng bộ phiên phân tích</div>
+            <div class="text-[15px] font-extrabold mt-0.5" id="exportSyncTitle">Ngọc Linh Data Studio · Phiên bản #1</div>
+            <div class="text-[12px] text-brown-soft" id="exportSyncMeta">Cả 3 sản phẩm Excel, Word và HTML dùng chung một bộ dữ liệu đã làm sạch.</div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button onclick="downloadFile('/api/export/excel', 'Ngoc_Linh_Data_Studio_BI_Workbook.xlsx')" class="px-4 py-2 rounded-full bg-brown hover:bg-ink text-canvas text-[12.5px] font-bold transition flex items-center gap-1.5">
+              <i class="ph ph-file-xls"></i> Tải Excel (.xlsx)
+            </button>
+            <button onclick="downloadFile('/api/export/word', 'Ngoc_Linh_Data_Studio_BI_Report.docx')" class="px-4 py-2 rounded-full bg-bluex hover:bg-ink text-white text-[12.5px] font-bold transition flex items-center gap-1.5">
+              <i class="ph ph-file-doc"></i> Tải Word (.docx)
+            </button>
+            <button onclick="downloadFile('/api/export/html', 'Ngoc_Linh_Data_Studio_Dashboard.html')" class="px-4 py-2 rounded-full bg-amberx hover:bg-ink hover:text-canvas text-ink text-[12.5px] font-bold transition flex items-center gap-1.5">
+              <i class="ph ph-globe"></i> Tải Dashboard HTML
+            </button>
+          </div>
+        </div>
+
+        <!-- Preview Center 3 Tabs -->
+        <div class="card-soft rounded-3xl p-6 space-y-5 fade-up d1">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-brown/10 pb-4">
+            <div class="flex flex-wrap gap-2">
+              <button class="tab-btn active px-4 py-2 rounded-full text-[12.5px] font-bold bg-soft text-brown transition" data-tab="excel" onclick="switchPreviewTab('excel')">Tab 1 · Preview Excel (6 Sheets)</button>
+              <button class="tab-btn px-4 py-2 rounded-full text-[12.5px] font-bold bg-soft text-brown transition" data-tab="word" onclick="switchPreviewTab('word')">Tab 2 · Preview Word (A4 Report)</button>
+              <button class="tab-btn px-4 py-2 rounded-full text-[12.5px] font-bold bg-soft text-brown transition" data-tab="html" onclick="switchPreviewTab('html')">Tab 3 · Preview Dashboard HTML</button>
+            </div>
+            <span id="previewBadge" class="text-[12px] text-brown-soft font-semibold">Dữ liệu thực tế từ phiên hiện tại</span>
+          </div>
+
+          <!-- TAB 1: EXCEL PREVIEW -->
+          <div id="tabExcel" class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex flex-wrap gap-1.5" id="excelSheetTabs">
+                <button onclick="loadExcelPreview('RAW DATA', 1)" class="ex-sheet-btn px-3 py-1.5 rounded-xl bg-soft text-[11.5px] font-bold">RAW DATA</button>
+                <button onclick="loadExcelPreview('CLEANED DATA', 1)" class="ex-sheet-btn px-3 py-1.5 rounded-xl bg-brown text-canvas text-[11.5px] font-bold">CLEANED DATA</button>
+                <button onclick="loadExcelPreview('DATA DICTIONARY', 1)" class="ex-sheet-btn px-3 py-1.5 rounded-xl bg-soft text-[11.5px] font-bold">DATA DICTIONARY</button>
+                <button onclick="loadExcelPreview('CLEANING LOG', 1)" class="ex-sheet-btn px-3 py-1.5 rounded-xl bg-soft text-[11.5px] font-bold">CLEANING LOG</button>
+                <button onclick="loadExcelPreview('ANALYSIS', 1)" class="ex-sheet-btn px-3 py-1.5 rounded-xl bg-soft text-[11.5px] font-bold">ANALYSIS</button>
+                <button onclick="loadExcelPreview('DASHBOARD', 1)" class="ex-sheet-btn px-3 py-1.5 rounded-xl bg-soft text-[11.5px] font-bold">DASHBOARD</button>
+              </div>
+              <input id="excelSearchInput" type="text" placeholder="Lọc dữ liệu sheet..." oninput="loadExcelPreview(currentExcelSheet, 1)" class="bg-canvas border border-brown/15 rounded-xl px-3 py-1.5 text-[12px] w-48 outline-none">
+            </div>
+
+            <div class="overflow-x-auto scroll-thin max-h-[420px] border border-brown/10 rounded-2xl">
+              <table class="w-full text-[12px]">
+                <thead id="excelPreviewHead" class="bg-soft sticky top-0"></thead>
+                <tbody id="excelPreviewBody"></tbody>
+              </table>
+            </div>
+            <div class="flex items-center justify-between text-[12px] text-brown-soft">
+              <span id="excelPageInfo">Sheet CLEANED DATA · 0 bản ghi</span>
+              <div class="flex gap-1.5">
+                <button onclick="loadExcelPreview(currentExcelSheet, excelPage - 1)" class="px-3 py-1 rounded-lg bg-soft font-semibold">Trước</button>
+                <button onclick="loadExcelPreview(currentExcelSheet, excelPage + 1)" class="px-3 py-1 rounded-lg bg-soft font-semibold">Sau</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: WORD PREVIEW -->
+          <div id="tabWord" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-[12.5px] text-brown-soft">Bản xem trước định dạng A4 · Font Times New Roman · Đồng bộ 100% với tệp DOCX</span>
+              <div class="flex gap-2">
+                <button onclick="openWordFullscreen()" class="px-3.5 py-1.5 rounded-full bg-soft hover:bg-brown-light/30 text-brown text-[12px] font-semibold flex items-center gap-1.5"><i class="ph ph-arrows-out"></i> Xem toàn bộ</button>
+                <button onclick="renderWordPreview()" class="px-3.5 py-1.5 rounded-full bg-soft hover:bg-brown-light/30 text-brown text-[12px] font-semibold">Làm mới</button>
+                <button onclick="downloadFile('/api/export/word', 'Ngoc_Linh_Data_Studio_BI_Report.docx')" class="px-4 py-1.5 rounded-full bg-bluex text-white text-[12px] font-bold">Tải Word (.docx)</button>
+              </div>
+            </div>
+            <div id="wordA4Container" class="bg-soft/70 p-4 md:p-6 rounded-2xl max-h-[820px] overflow-y-auto scroll-thin"></div>
+          </div>
+
+          <!-- TAB 3: HTML DASHBOARD PREVIEW -->
+          <div id="tabHtml" class="hidden space-y-5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <span class="text-[12.5px] text-brown-soft">Dashboard BI tổng hợp tương tác (chạy offline trên Chrome/Edge, không nhúng PII khách hàng)</span>
+              <div class="flex gap-2">
+                <button onclick="openHtmlFullscreen()" class="px-3.5 py-1.5 rounded-full bg-soft hover:bg-brown-light/30 text-brown text-[12px] font-semibold flex items-center gap-1.5">
+                  <i class="ph ph-arrows-out"></i> Mở bản HTML toàn màn hình
+                </button>
+                <button onclick="downloadFile('/api/export/html', 'Ngoc_Linh_Data_Studio_Dashboard.html')" class="px-4 py-1.5 rounded-full bg-amberx text-ink text-[12px] font-bold">Tải Dashboard HTML</button>
+              </div>
+            </div>
+            <div id="tabHtmlSummary" class="space-y-5"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div id="toastWrap" class="fixed bottom-5 right-5 z-50 space-y-2 max-w-sm"></div>
+
+<script>
+let currentStep = 0;
+let status = {};
+let lastCleanResult = null;
+let analysis = null;
+let rawPage = 1, exPage = 1, cleanedPage = 1, excelPage = 1;
+let currentExcelSheet = 'CLEANED DATA';
+let cachedHtmlPreview = '';
+let progTimer = null;
+
+const fmt = n => Math.round(Number(n || 0)).toLocaleString('vi-VN');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function toast(msg, type = 'info') {
+  const wrap = document.getElementById('toastWrap');
+  const cls = type === 'error' ? 'bg-redx text-white' : type === 'success' ? 'bg-okx text-white' : 'bg-ink text-canvas';
+  const el = document.createElement('div');
+  el.className = `toast px-4 py-3 rounded-2xl shadow-lg text-[12.5px] font-semibold ${cls}`;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 4200);
+}
+
+function showProgress(stage, processed, total, pct, elapsedMs) {
+  const bar = document.getElementById('globalProgressBar');
+  bar.classList.remove('hidden');
+  document.getElementById('progStageText').textContent = stage;
+  document.getElementById('progRowText').textContent = `${fmt(processed)} / ${fmt(total)} dòng`;
+  document.getElementById('progPctText').textContent = `${pct}%`;
+  document.getElementById('progTimeText').textContent = `${elapsedMs || 0}ms`;
+  document.getElementById('progBarFill').style.width = `${Math.min(100, Math.max(0, pct))}%`;
+}
+function hideProgress() {
+  setTimeout(() => document.getElementById('globalProgressBar').classList.add('hidden'), 1200);
+}
+
+// ---------- NAVIGATION ----------
+const STEP_META = [
+  ['Trang chủ · Ngọc Linh Data Studio', 'Nền tảng làm sạch dữ liệu, phân tích BI và xuất báo cáo quản trị chuyên nghiệp'],
+  ['Bước 1 · Nhập dữ liệu', 'Kết nối Google Sheets, tải tệp Excel/CSV quy mô lớn 60.000+ dòng'],
+  ['Bước 2 · Làm sạch & Duyệt dữ liệu', 'Chuẩn hóa dữ liệu, chỉnh sửa ngoại lệ trực tiếp tại ô & phê duyệt'],
+  ['Bước 3 · Phân tích & Đánh giá', '7 nhóm phân tích tài chính, Insight có bằng chứng số liệu & Q&A'],
+  ['Bước 4 · Dashboard & Xuất tệp', 'Preview Center 3 tab và tải đồng bộ Excel, Word, Interactive HTML']
+];
+
+function goToStep(step) {
+  if (step === 2 && !status.step1_connected) { toast('Vui lòng nhập dữ liệu ở Bước 1 trước.', 'error'); step = 1; }
+  if (step === 3 && !status.step2_verified) { toast('Vui lòng làm sạch và Phê duyệt dữ liệu ở Bước 2 trước.', 'error'); step = status.step1_connected ? 2 : 1; }
+  if (step === 4 && !status.step2_cleaned) { toast('Chưa có dữ liệu sạch để xem trước và xuất tệp.', 'error'); step = status.step1_connected ? 2 : 1; }
+
+  currentStep = step;
+  for (let i = 0; i <= 4; i++) {
+    document.getElementById('view' + i).classList.toggle('hidden', i !== step);
+  }
+  document.querySelectorAll('.side-item').forEach(b => b.classList.toggle('active', parseInt(b.dataset.step) === step));
+  document.getElementById('mobileNavSelect').value = String(step);
+  document.getElementById('pageHeaderTitle').textContent = STEP_META[step][0];
+  document.getElementById('pageHeaderSub').textContent = STEP_META[step][1];
+
+  const actBtn = document.getElementById('headerStepActionBtn');
+  if (step === 0) { actBtn.querySelector('span').textContent = 'Bắt đầu nhập dữ liệu'; actBtn.onclick = () => goToStep(1); }
+  else if (step === 1) { actBtn.querySelector('span').textContent = 'Sang Bước 2: Làm sạch'; actBtn.onclick = () => goToStep(2); }
+  else if (step === 2) { actBtn.querySelector('span').textContent = 'Sang Bước 3: Phân tích'; actBtn.onclick = () => goToStep(3); }
+  else if (step === 3) { actBtn.querySelector('span').textContent = 'Sang Bước 4: Xuất tệp'; actBtn.onclick = () => goToStep(4); }
+  else { actBtn.querySelector('span').textContent = 'Tải Dashboard HTML'; actBtn.onclick = () => downloadFile('/api/export/html', 'Ngoc_Linh_Data_Studio_Dashboard.html'); }
+
+  if (step === 1 && status.step1_connected) loadRawPage(rawPage);
+  if (step === 2) {
+    if (status.step1_connected && !status.step2_cleaned) executeDataCleaning();
+    else if (status.step2_cleaned) { loadExceptionsPage(exPage); loadCleanedPage(cleanedPage); loadEditLogs(); }
+  }
+  if (step === 3) fetchDashboardAnalysis();
+  if (step === 4) loadPreviewCenter();
+}
+
+async function loadStatus() {
+  try {
+    status = await (await fetch('/api/status')).json();
+    document.getElementById('dot1').className = 'w-2 h-2 rounded-full ' + (status.step1_connected ? 'bg-okx' : 'bg-brown-light');
+    document.getElementById('dot2').className = 'w-2 h-2 rounded-full ' + (status.step2_verified ? 'bg-okx' : status.step2_cleaned ? 'bg-amberx' : 'bg-brown-light');
+    document.getElementById('dot3').className = 'w-2 h-2 rounded-full ' + (status.step3_evaluated ? 'bg-okx' : status.step3_analyzed ? 'bg-amberx' : 'bg-brown-light');
+    document.getElementById('dot4').className = 'w-2 h-2 rounded-full ' + (status.step4_ready ? 'bg-okx' : 'bg-brown-light');
+
+    const gp = document.getElementById('gateVerifyPill');
+    gp.textContent = status.step2_verified ? 'Đã duyệt' : 'Chờ duyệt';
+    gp.className = 'px-2 py-0.5 rounded-full font-semibold text-[11px] ' + (status.step2_verified ? 'bg-okx/15 text-okx' : 'bg-soft text-brown');
+
+    const ep = document.getElementById('gateEvalPill');
+    ep.textContent = status.step3_evaluated ? 'Đạt chuẩn' : 'Chờ đánh giá';
+    ep.className = 'px-2 py-0.5 rounded-full font-semibold text-[11px] ' + (status.step3_evaluated ? 'bg-okx/15 text-okx' : 'bg-soft text-brown');
+
+    document.getElementById('sideDataVer').textContent = '#' + (status.dataVersion || 1);
+    document.getElementById('sideFileTitle').textContent = status.step1_source || 'Chưa có tệp';
+    document.getElementById('sideFileSub').textContent = status.step1_connected ? `${fmt(status.step1_count)} dòng · ${status.step1_fileCount} tệp` : 'Chờ tải dữ liệu';
+    const hb = document.getElementById('headerBizBadge'); if (hb) hb.querySelector('span').textContent = status.businessModel || 'Bán lẻ đa kênh';
+    document.getElementById('btnGoStep2').disabled = !status.step1_connected;
+    document.getElementById('btnApprove').disabled = !status.step2_cleaned;
+  } catch (e) { console.error(e); }
+}
+
+async function resetAll() {
+  await fetch('/api/reset', { method: 'POST' });
+  lastCleanResult = null; analysis = null; cachedHtmlPreview = '';
+  await loadStatus();
+  refreshStep1Summary();
+  toast('Đã làm mới phiên làm việc.', 'success');
+  goToStep(0);
+}
+
+// ---------- STEP 1: NHẬP DỮ LIỆU (60.000+ STREAM / BATCH) ----------
+async function selectBizModel(btn, model) {
+  document.querySelectorAll('.biz-btn').forEach(b => {
+    b.className = 'biz-btn px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown/15 bg-canvas text-brown text-left hover:bg-soft';
+  });
+  btn.className = 'biz-btn active px-3 py-2 rounded-xl text-[12px] font-semibold border border-brown bg-brown text-canvas text-left';
+  const wrap = document.getElementById('customBizModelWrap');
+  if (model === '__OTHER__') {
+    wrap.classList.remove('hidden');
+    document.getElementById('customBizModelInput').focus();
+    return;
+  }
+  wrap.classList.add('hidden');
+  await fetch('/api/connect/business-model', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessModel: model }) });
+  const hb = document.getElementById('headerBizBadge'); if (hb) hb.querySelector('span').textContent = model;
+}
+
+async function saveCustomBizModel() {
+  const val = (document.getElementById('customBizModelInput').value || '').trim();
+  if (!val) return toast('Vui lòng nhập tên mô hình kinh doanh.', 'error');
+  await fetch('/api/connect/business-model', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ businessModel: val }) });
+  const hb = document.getElementById('headerBizBadge'); if (hb) hb.querySelector('span').textContent = val;
+  toast(`Đã chọn mô hình: ${val}`, 'success');
+}
+
+function downloadTemplate() { window.location.href = '/api/connect/template'; }
+
+async function handleFileSelect(file) {
+  if (!file) return;
+  const name = file.name.toLowerCase();
+  const t0 = Date.now();
+  showProgress('Đang đọc dữ liệu', 0, 1, 5, 0);
+
+  try {
+    if (name.endsWith('.csv') || name.endsWith('.json')) {
+      // Stream CSV directly to backend (with progress polling for large 60k+ files)
+      const fd = new FormData();
+      fd.append('file', file);
+      if (progTimer) clearInterval(progTimer);
+      progTimer = setInterval(async () => {
+        try {
+          const p = await (await fetch('/api/job/progress')).json();
+          if (p.isRunning) showProgress(p.stage, p.processedRows, Math.max(p.totalRows, p.processedRows), p.percent, p.elapsedMs);
+        } catch {}
+      }, 350);
+
+      const res = await fetch('/api/connect/upload-file', { method: 'POST', body: fd });
+      clearInterval(progTimer);
+      const data = await res.json();
+      if (!res.ok) { hideProgress(); return toast(data.message || 'Lỗi đọc tệp', 'error'); }
+      showProgress('Hoàn tất đọc & kiểm tra cấu trúc', data.file.recordCount, data.file.recordCount, 100, Date.now() - t0);
+      hideProgress();
+      toast(data.message, 'success');
+    } else if (name.endsWith('.xlsx') || name.endsWith('.xls')) {
+      // Parse Excel in browser and send in batches of 10,000 rows
+      showProgress('Đang giải mã Excel...', 0, 1, 10, Date.now() - t0);
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rawRows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+      if (!rawRows.length) { hideProgress(); return toast('Tệp Excel trống.', 'error'); }
+
+      const headers = Object.keys(rawRows[0]);
+      const mapRow = (r, idx) => {
+        const get = (...keys) => {
+          for (const k of keys) {
+            const found = headers.find(h => h.toLowerCase().includes(k));
+            if (found && r[found] !== undefined && r[found] !== '') return r[found];
+          }
+          return '';
+        };
+        const rawDate = get('orderdate', 'ngày gd', 'ngày', 'kỳ', 'date', 'time');
+        const dt = rawDate instanceof Date ? rawDate : new Date(rawDate || Date.now());
+        const num = v => parseFloat(String(v || 0).replace(/[^\d.-]/g, '')) || 0;
+        const qty = parseInt(get('quantity', 'số lượng', 'qty', 'sl')) || 1;
+        const price = num(get('unitprice', 'đơn giá', 'price', 'giá bán', 'doanh thu', 'thành tiền', 'tổng tiền', 'giá trị', 'revenue', 'amount', 'total', 'sales'));
+        return {
+          orderCode: String(get('ordercode', 'mã đơn', 'mã gd', 'ma gd', 'mã giao dịch', 'transaction', 'order id', 'số hđ', 'code', 'id') || `GD-${String(idx + 1).padStart(4, '0')}`),
+          orderDate: isNaN(dt.getTime()) ? new Date().toISOString() : dt.toISOString(),
+          customerName: String(get('customer', 'khách hàng', 'phụ trách') || ''),
+          storeName: String(get('store', 'chi nhánh', 'đơn vị', 'cửa hàng', 'cơ sở', 'branch') || 'Chưa phân loại'),
+          sku: String(get('sku', 'mã sp', 'mã hàng') || 'N/A'),
+          productName: String(get('product', 'sản phẩm', 'tên sp', 'tên hàng', 'mặt hàng', 'dịch vụ') || 'Giao dịch chuẩn'),
+          quantity: qty,
+          unitPrice: price,
+          discountAmount: num(get('discount', 'chiết khấu', 'giảm giá')),
+          unitCost: num(get('unitcost', 'giá vốn', 'cogs', 'cost')),
+          status: String(get('status', 'trạng thái', 'tình trạng') || 'COMPLETED'),
+          channel: String(get('channel', 'kênh') || 'Khác')
+        };
+      };
+
+      const total = rawRows.length;
+      const BATCH = 10000;
+      const totalBatches = Math.ceil(total / BATCH);
+      const uploadId = 'u' + Date.now();
+
+      for (let b = 0; b < totalBatches; b++) {
+        const slice = rawRows.slice(b * BATCH, (b + 1) * BATCH).map((r, i) => mapRow(r, b * BATCH + i));
+        showProgress('Đang nạp dữ liệu theo batch', Math.min(total, (b + 1) * BATCH), total, Math.round(((b + 1) / totalBatches) * 95), Date.now() - t0);
+        const res = await fetch('/api/connect/upload-batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uploadId, fileName: file.name, fileSizeBytes: file.size, headers, records: slice, batchIndex: b, totalBatches })
+        });
+        const d = await res.json();
+        if (!res.ok) { hideProgress(); return toast(d.message || 'Lỗi nạp batch', 'error'); }
+        if (d.completed) toast(d.message, 'success');
+      }
+      showProgress('Hoàn tất đọc & kiểm tra cấu trúc', total, total, 100, Date.now() - t0);
+      hideProgress();
+    } else {
+      hideProgress();
+      return toast('Định dạng không hỗ trợ. Hãy chọn CSV, XLSX, XLS hoặc JSON.', 'error');
+    }
+
+    await loadStatus();
+    await refreshStep1Summary();
+    await loadRawPage(1);
+  } catch (e) {
+    hideProgress();
+    toast('Lỗi xử lý tệp: ' + e.message, 'error');
+  }
+}
+
+async function connectGoogleSheet() {
+  let url = document.getElementById('gsheetUrl').value.trim();
+  if (!url) return toast('Vui lòng dán link Google Sheets.', 'error');
+  const m = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+  if (m) url = `https://docs.google.com/spreadsheets/d/${m[1]}/export?format=csv`;
+  try {
+    showProgress('Đang tải Google Sheets...', 0, 1, 20, 0);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Không truy cập được link công khai.');
+    const blob = await res.blob();
+    const f = new File([blob], 'Google_Sheet_Data.csv', { type: 'text/csv' });
+    await handleFileSelect(f);
+  } catch (e) {
+    hideProgress();
+    toast('Lỗi Google Sheets: ' + e.message, 'error');
+  }
+}
+
+async function refreshStep1Summary() {
+  const data = await (await fetch('/api/connect/files')).json();
+  const files = data.files || [];
+  const s = data.summary || {};
+  document.getElementById('rawStatTotal').textContent = fmt(s.totalRecords);
+  document.getElementById('rawStatIssues').textContent = fmt((s.duplicateGroups || 0) + (s.cancelledOrders || 0));
+  document.getElementById('rawStatDims').textContent = `${s.uniqueStores || 0} CN · ${s.uniqueSkus || 0} SKU`;
+  document.getElementById('rawStatGross').textContent = fmt(s.estimatedRawGrossValue) + ' đ';
+  document.getElementById('step1StatusPill').textContent = files.length ? `${files.length} tệp sẵn sàng` : 'Chưa có tệp';
+
+  const list = document.getElementById('uploadedFilesList');
+  if (!files.length) {
+    list.innerHTML = '<div class="text-[12.5px] text-brown-soft py-6 text-center bg-canvas rounded-2xl">Chưa có tệp dữ liệu nào được tải lên.</div>';
+    document.getElementById('rawColumnsSummary').textContent = 'Tự động nhận diện cột chuẩn BI khi tải tệp';
+    return;
+  }
+  list.innerHTML = files.map(f => `
+    <div class="flex items-center justify-between p-3 rounded-2xl bg-canvas border border-brown/10">
+      <div class="min-w-0">
+        <div class="text-[13px] font-bold truncate">${esc(f.fileName)}</div>
+        <div class="text-[11px] text-brown-soft">${fmt(f.recordCount)} dòng · ${f.columnCount} cột · <span class="font-semibold text-brown">${esc(f.status)}</span></div>
+      </div>
+      <button onclick="removeFile('${f.id}')" class="p-1.5 rounded-lg hover:bg-redx hover:text-white text-brown-soft transition" title="Xóa tệp"><i class="ph ph-trash"></i></button>
+    </div>
+  `).join('');
+  if (files[0]?.detectedColumns?.length) {
+    document.getElementById('rawColumnsSummary').textContent = `Cột nhận diện (${files[0].columnCount}): ${files[0].detectedColumns.slice(0, 12).join(', ')}`;
+  }
+}
+
+async function removeFile(id) {
+  await fetch(`/api/connect/files/${id}`, { method: 'DELETE' });
+  await loadStatus();
+  await refreshStep1Summary();
+  await loadRawPage(1);
+}
+
+let rawTimer = null;
+function debouncedLoadRawPage(p) { clearTimeout(rawTimer); rawTimer = setTimeout(() => loadRawPage(p), 250); }
+async function loadRawPage(page) {
+  rawPage = Math.max(1, page);
+  const q = encodeURIComponent(document.getElementById('rawSearchInput').value || '');
+  const d = await (await fetch(`/api/connect/records?page=${rawPage}&pageSize=50&search=${q}`)).json();
+  rawPage = d.page || 1;
+  document.getElementById('rawPageInfo').textContent = `Trang ${d.page} / ${d.totalPages} (${fmt(d.total)} dòng)`;
+  document.getElementById('rawPreviewBody').innerHTML = (d.records || []).map(r => `
+    <tr class="border-b border-brown/5 hover:bg-shell/60">
+      <td class="py-2 pr-3 font-semibold">${esc(r.orderCode)}</td>
+      <td class="py-2 pr-3">${String(r.orderDate || '').slice(0,10)}</td>
+      <td class="py-2 pr-3">${esc(r.storeName)}</td>
+      <td class="py-2 pr-3 text-brown-soft">${esc(r.sku)}</td>
+      <td class="py-2 pr-3">${esc(r.productName)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmt(r.quantity)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmt(r.unitPrice)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmt(r.unitCost)}</td>
+      <td class="py-2"><span class="px-2 py-0.5 rounded-full bg-soft text-[11px] font-semibold">${esc(r.status)}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" class="py-8 text-center text-brown-soft">Không có dữ liệu phù hợp.</td></tr>';
+}
+
+// ---------- STEP 2: LÀM SẠCH & CHỈNH SỬA TRỰC TIẾP TẠI Ô ----------
+async function executeDataCleaning() {
+  const t0 = Date.now();
+  showProgress('Đang phát hiện trùng lặp & chuẩn hóa dữ liệu...', 0, status.step1_count || 0, 35, 0);
+  const cfg = {
+    removeDuplicates: document.getElementById('chkDup').checked,
+    excludeCancelled: document.getElementById('chkCancel').checked,
+    deductReturns: document.getElementById('chkReturn').checked,
+    normalizeFormat: document.getElementById('chkNorm').checked
+  };
+  const res = await fetch('/api/clean/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cfg) });
+  const r = await res.json();
+  if (!res.ok) { hideProgress(); return toast(r.message, 'error'); }
+  applyCleanResult(r);
+  showProgress('Hoàn tất làm sạch dữ liệu', r.rawCount, r.rawCount, 100, r.elapsedMs || (Date.now() - t0));
+  hideProgress();
+  await loadStatus();
+  await loadExceptionsPage(1);
+  await loadCleanedPage(1);
+  await loadEditLogs();
+  toast(`Đã làm sạch ${fmt(r.cleanedCount)} bản ghi hợp lệ.`, 'success');
+}
+
+function applyCleanResult(r) {
+  lastCleanResult = r;
+  const excluded = (r.duplicatesRemoved || 0) + (r.cancelledExcluded || 0) + (r.missingOrInvalid || 0);
+  const exclPct = r.rawCount > 0 ? ((excluded / r.rawCount) * 100).toFixed(1) : '0.0';
+  const retRate = r.cleanedCount > 0 ? (((r.returnsAdjusted || 0) / r.cleanedCount) * 100).toFixed(2) : '0';
+
+  document.getElementById('cleanActualRev').textContent = fmt(r.actualRevenue) + ' đ';
+  document.getElementById('cleanGmv').textContent = fmt(r.gmv) + ' đ';
+  document.getElementById('cleanRawN').textContent = fmt(r.rawCount);
+  document.getElementById('cleanCleanN').textContent = fmt(r.cleanedCount);
+  document.getElementById('cleanExcludedN').textContent = fmt(excluded);
+  document.getElementById('cleanExcludedPct').textContent = `Chiếm ${exclPct}% tổng dữ liệu`;
+  document.getElementById('cleanReturnRate').textContent = `${retRate}%`;
+  document.getElementById('cleanReturnNote').textContent = `${fmt(r.returnsAdjusted || 0)} đơn hoàn · Ngưỡng chuẩn BI: ≤ 1.80%`;
+  document.getElementById('cleanedCountBadge').textContent = fmt(r.cleanedCount);
+}
+
+let currentExType = 'ALL';
+function setExFilter(type, btn) {
+  currentExType = type;
+  document.querySelectorAll('.ex-filter-pill').forEach(b => {
+    b.className = 'ex-filter-pill px-3.5 py-1.5 rounded-full text-[12px] font-semibold bg-canvas border border-brown/15 text-brown hover:bg-soft';
+  });
+  btn.className = 'ex-filter-pill px-3.5 py-1.5 rounded-full text-[12px] font-bold bg-amberx/25 border border-amberx text-ink';
+  loadExceptionsPage(1);
+}
+
+let exTimer = null;
+function debouncedLoadExceptions(p) { clearTimeout(exTimer); exTimer = setTimeout(() => loadExceptionsPage(p), 250); }
+async function loadExceptionsPage(page) {
+  exPage = Math.max(1, page);
+  const type = currentExType;
+  const q = encodeURIComponent(document.getElementById('exSearchInput').value || '');
+  const d = await (await fetch(`/api/clean/exceptions?page=${exPage}&pageSize=30&type=${type}&search=${q}`)).json();
+  exPage = d.page || 1;
+  document.getElementById('exPageInfo').textContent = `Trang ${d.page} / ${d.totalPages} (${fmt(d.total)} ngoại lệ)`;
+  renderExceptionsTable(d.records || []);
+}
+
+function renderExceptionsTable(items) {
+  const tbody = document.getElementById('exceptionsTableBody');
+  if (!items.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="py-8 text-center text-brown-soft font-medium">Không có bản ghi ngoại lệ nào trong nhóm lọc này.</td></tr>';
+    return;
+  }
+  const tag = t => {
+    const m = { DUPLICATE: ['bg-amberx/20 text-brown', 'Trùng mã'], CANCELLED: ['bg-redx/15 text-redx', 'Đơn hủy'], RETURNED: ['bg-bluex/15 text-bluex', 'Hoàn trả'], MISSING_OR_INVALID: ['bg-redx/15 text-redx', 'Thiếu / Lệch'] };
+    const [c, lbl] = m[t] || ['bg-soft text-brown', t];
+    return `<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${c}">${lbl}</span>`;
+  };
+  tbody.innerHTML = items.map(ex => {
+    const r = ex.record || {};
+    const dtStr = String(r.orderDate || '').slice(0, 10);
+    return `<tr class="border-b border-brown/10 hover:bg-shell/50" data-raw-idx="${ex.rawIndex}" data-orig='${esc(JSON.stringify(r))}'>
+      <td class="py-2.5 px-3 font-mono text-[11.5px] text-brown-soft">GD-${String(ex.rawIndex + 1).padStart(4, '0')}</td>
+      <td class="py-2.5 px-3">
+        <div class="inline-cell font-bold" data-field="orderCode" onclick="activateCell(this)">${esc(r.orderCode)}</div>
+        <div class="text-[11px] text-brown-soft px-2">${esc(r.customerName || r.productName || '')}</div>
+      </td>
+      <td class="py-2.5 px-3"><div class="inline-cell" data-field="storeName" onclick="activateCell(this)">${esc(r.storeName)}</div></td>
+      <td class="py-2.5 px-3"><div class="inline-cell tabular-nums" data-field="orderDate" onclick="activateCell(this)">${esc(dtStr)}</div></td>
+      <td class="py-2.5 px-3">${tag(ex.exceptionType)}</td>
+      <td class="py-2.5 px-3 text-[11.5px] text-brown-soft">${esc(ex.reason)}</td>
+      <td class="py-2.5 px-3"><div class="inline-cell font-semibold" data-field="status" onclick="activateCell(this)">${esc(r.status)}</div></td>
+      <td class="py-2.5 px-3 text-right whitespace-nowrap space-x-1">
+        <button onclick="saveInlineRow(${ex.rawIndex}, this)" class="px-2.5 py-1 rounded-full bg-brown hover:bg-ink text-canvas text-[11px] font-bold">Lưu</button>
+        <button onclick="cancelInlineRow(this)" class="px-2.5 py-1 rounded-full bg-soft hover:bg-brown-light/40 text-brown text-[11px] font-semibold">Hủy</button>
+        ${ex.canUndo ? `<button onclick="undoInlineRow(${ex.rawIndex})" class="px-2.5 py-1 rounded-full bg-amberx/20 hover:bg-amberx text-ink text-[11px] font-bold">Khôi phục</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function activateCell(div) {
+  if (div.querySelector('input,select')) return;
+  const field = div.dataset.field;
+  const val = div.textContent.trim();
+  if (field === 'status') {
+    div.innerHTML = `<select class="bg-white border border-brown rounded-lg px-2 py-1 text-[12px] outline-none">
+      <option value="COMPLETED" ${val==='COMPLETED'?'selected':''}>COMPLETED</option>
+      <option value="CANCELLED" ${val==='CANCELLED'?'selected':''}>CANCELLED</option>
+      <option value="FAILED" ${val==='FAILED'?'selected':''}>FAILED</option>
+      <option value="RETURNED" ${val==='RETURNED'?'selected':''}>RETURNED</option>
+    </select>`;
+  } else if (field === 'orderDate') {
+    div.innerHTML = `<input type="date" value="${esc(val)}" class="bg-white border border-brown rounded-lg px-2 py-1 text-[12px] outline-none">`;
+  } else {
+    div.innerHTML = `<input type="text" value="${esc(val)}" class="w-28 bg-white border border-brown rounded-lg px-2 py-1 text-[12px] outline-none">`;
+  }
+  div.querySelector('input,select').focus();
+}
+
+function cancelInlineRow(btn) {
+  const tr = btn.closest('tr');
+  const orig = JSON.parse(tr.dataset.orig);
+  tr.querySelector('[data-field="orderCode"]').textContent = orig.orderCode || '';
+  tr.querySelector('[data-field="storeName"]').textContent = orig.storeName || '';
+  tr.querySelector('[data-field="orderDate"]').textContent = String(orig.orderDate || '').slice(0, 10);
+  tr.querySelector('[data-field="status"]').textContent = orig.status || 'COMPLETED';
+}
+
+async function saveInlineRow(rawIdx, btn) {
+  const tr = btn.closest('tr');
+  const orig = JSON.parse(tr.dataset.orig);
+  const readField = f => {
+    const cell = tr.querySelector(`[data-field="${f}"]`);
+    const inp = cell.querySelector('input,select');
+    return inp ? inp.value.trim() : cell.textContent.trim();
+  };
+  const orderCode = readField('orderCode');
+  const storeName = readField('storeName');
+  const orderDate = readField('orderDate');
+  const statusVal = readField('status');
+  if (!orderCode) return toast('Lỗi: Mã đơn không được để trống.', 'error');
+  if (!storeName) return toast('Lỗi: Đơn vị / Chi nhánh không được để trống.', 'error');
+  if (!orderDate || isNaN(Date.parse(orderDate))) return toast('Lỗi: Ngày giao dịch không hợp lệ.', 'error');
+
+  const payload = Object.assign({}, orig, { orderCode, storeName, orderDate: new Date(orderDate).toISOString(), status: statusVal });
+  const res = await fetch(`/api/clean/raw-record/${rawIdx}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  const r = await res.json();
+  if (!res.ok) return toast(r.message || 'Không thể lưu thay đổi.', 'error');
+
+  applyCleanResult(r.cleanResult);
+  await loadStatus();
+  await loadExceptionsPage(exPage);
+  await loadCleanedPage(cleanedPage);
+  await loadEditLogs();
+  toast(r.message, 'success');
+}
+
+async function undoInlineRow(rawIdx) {
+  const res = await fetch(`/api/clean/raw-record/${rawIdx}/undo`, { method: 'POST' });
+  const r = await res.json();
+  if (!res.ok) return toast(r.message, 'error');
+  applyCleanResult(r.cleanResult);
+  await loadStatus();
+  await loadExceptionsPage(exPage);
+  await loadCleanedPage(cleanedPage);
+  await loadEditLogs();
+  toast(r.message, 'success');
+}
+
+let cleanedTimer = null;
+function debouncedLoadCleaned(p) { clearTimeout(cleanedTimer); cleanedTimer = setTimeout(() => loadCleanedPage(p), 250); }
+async function loadCleanedPage(page) {
+  cleanedPage = Math.max(1, page);
+  const q = encodeURIComponent(document.getElementById('cleanedSearchInput').value || '');
+  const d = await (await fetch(`/api/clean/cleaned-records?page=${cleanedPage}&pageSize=30&search=${q}`)).json();
+  cleanedPage = d.page || 1;
+  document.getElementById('cleanedPageInfo').textContent = `Trang ${d.page} / ${d.totalPages} (${fmt(d.total)} dòng)`;
+  document.getElementById('cleanedTableBody').innerHTML = (d.records || []).map(r => `
+    <tr class="border-b border-brown/5">
+      <td class="py-2 pr-2 font-semibold">${esc(r.orderCode)}</td>
+      <td class="py-2 pr-2">${esc(r.storeName)}</td>
+      <td class="py-2 pr-2">${esc(r.productName)}</td>
+      <td class="py-2 pr-2 text-right tabular-nums ${r.netRevenue < 0 ? 'text-redx' : ''}">${fmt(r.netRevenue)}</td>
+      <td class="py-2 pr-2 text-right tabular-nums">${fmt(r.grossProfit)}</td>
+      <td class="py-2"><span class="px-2 py-0.5 rounded-full bg-soft text-[10.5px]">${esc(r.cleanRemark)}</span></td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" class="py-6 text-center text-brown-soft">Chưa có bản ghi sạch.</td></tr>';
+}
+
+async function loadEditLogs() {
+  const d = await (await fetch('/api/clean/edit-logs?page=1&pageSize=30')).json();
+  document.getElementById('editLogCountBadge').textContent = fmt(d.total || 0);
+  const box = document.getElementById('editLogsList');
+  if (!d.logs?.length) { box.innerHTML = '<div class="text-brown-soft py-4 text-center">Chưa có chỉnh sửa nào trong phiên.</div>'; return; }
+  box.innerHTML = d.logs.map(l => `
+    <div class="p-2.5 rounded-xl bg-canvas border border-brown/10">
+      <div class="flex justify-between font-bold"><span>${esc(l.orderCode)} · ${esc(l.field)}</span><span class="text-[10.5px] text-brown-soft">${esc(l.editedAt)}</span></div>
+      <div class="text-[11px] text-brown-soft mt-0.5">${esc(l.oldValue)} → <strong class="text-ink">${esc(l.newValue)}</strong></div>
+    </div>
+  `).join('');
+}
+
+async function verifyCleaning(approved) {
+  const res = await fetch('/api/clean/verify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approved }) });
+  const r = await res.json();
+  if (!res.ok) return toast(r.message, 'error');
+  await loadStatus();
+  toast(r.message, approved ? 'success' : 'error');
+  if (approved) setTimeout(() => goToStep(3), 400);
+}
+
+// ---------- STEP 3: PHÂN TÍCH & ĐÁNH GIÁ ----------
+async function fetchDashboardAnalysis() {
+  const res = await fetch('/api/analyze/dashboard');
+  if (!res.ok) return toast('Vui lòng làm sạch & phê duyệt dữ liệu trước.', 'error');
+  analysis = await res.json();
+  renderDashboard(analysis);
+}
+
+function toggleRankingTable() {
+  document.getElementById('rankingTableWrap').classList.toggle('hidden');
+}
+
+function renderDashboard(d) {
+  const m = d.overallMetrics;
+  const p = d.pricingAnalysis || {};
+  const stores = d.storePerformance || [];
+  const prods = d.productPerformance || [];
+  const rawN = Math.max(1, status.step1_count || m.totalOrders || 1);
+  const cleanRetentionPct = Math.round((m.totalOrders / rawN) * 100);
+  const completedRatePct = m.totalOrders > 0 ? Math.round(((d.completedOrders ?? (m.totalOrders - m.ReturnOrders || m.totalOrders - m.returnOrders)) / m.totalOrders) * 100) : 100;
+
+  const topStore = stores[0] || { storeName: 'Toàn hệ thống', netRevenue: m.totalNetRevenue };
+  const topStoreShare = m.totalNetRevenue > 0 ? ((topStore.netRevenue / m.totalNetRevenue) * 100).toFixed(1) : '100.0';
+  const worstStore = [...stores].sort((a, b) => b.returnRatePercent - a.returnRatePercent)[0] || topStore;
+  const lowStore = [...stores].sort((a, b) => a.netRevenue - b.netRevenue)[0] || topStore;
+  const topProd = prods[0] || { productName: 'Chủ lực', netRevenue: m.totalNetRevenue };
+  const topProdShare = m.totalNetRevenue > 0 ? ((topProd.netRevenue / m.totalNetRevenue) * 100).toFixed(1) : '100.0';
+  const costRatio = m.hasCostData && m.totalNetRevenue > 0 ? ((m.totalCost / m.totalNetRevenue) * 100).toFixed(1) : '0.0';
+
+  // 1. Render 6 Insight Cards (2x3) — đọc trực tiếp từ StructuredRecommendations đã căn chỉnh theo Schema từng file thô
+  const recs = d.structuredRecommendations || [];
+  const insMeta = [
+    { border: '#DD9E5E', val: fmt(m.totalNetRevenue) + ' đ', cls: 'text-brown' },
+    { border: '#3D7A52', val: `${cleanRetentionPct}% Dữ liệu sạch`, cls: 'text-okx' },
+    { border: '#C84B4B', val: `Hoàn ${m.returnRatePercent}% · Hủy ${m.cancelRatePercent}%`, cls: 'text-redx' },
+    { border: '#657DC4', val: m.hasCostData ? `Biên LN ${m.grossMarginPercent}%` : 'Chưa có giá vốn', cls: 'text-ink' },
+    { border: '#C84B4B', val: (recs[4]?.title || '').replace('Ưu Tiên Khắc Phục Ngắn Hạn: ', '') || 'Kiểm soát vận hành', cls: 'text-redx' },
+    { border: '#3D7A52', val: (recs[5]?.title || '').replace('Định Hướng Tối Ưu Trung & Dài Hạn: ', '') || 'Tối ưu danh mục', cls: 'text-okx' }
+  ];
+  document.getElementById('sixInsightsGrid').innerHTML = recs.slice(0, 6).map((r, i) => {
+    const meta = insMeta[i] || { border: '#664F41', val: r.priority, cls: 'text-ink' };
+    return `<div class="card-soft rounded-2xl p-5 border-l-4" style="border-left-color:${meta.border}">
+      <div class="text-[10.5px] font-extrabold tracking-wider text-brown-soft uppercase">${esc(r.category)}</div>
+      <div class="text-[15px] font-extrabold text-ink mt-1">${esc(r.title)}</div>
+      <div class="text-[22px] font-extrabold mt-1.5 ${meta.cls} tabular-nums">${esc(meta.val)}</div>
+      <p class="text-[12.5px] text-brown mt-2 leading-relaxed">${esc(r.content)}</p>
+    </div>`;
+  }).join('');
+
+  // Ranking Table
+  document.getElementById('rankingTableBody').innerHTML = stores.map(s => `
+    <tr class="border-b border-brown/5">
+      <td class="py-2 pr-3 font-bold">${esc(s.storeName)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${fmt(s.orderCount)}</td>
+      <td class="py-2 pr-3 text-right tabular-nums font-semibold">${fmt(s.netRevenue)} đ</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${m.hasCostData ? fmt(s.grossProfit) + ' đ' : '—'}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${m.hasCostData ? s.marginPercent + '%' : '—'}</td>
+      <td class="py-2 pr-3 text-right tabular-nums">${s.returnRatePercent}%</td>
+      <td class="py-2"><span class="px-2 py-0.5 rounded-full bg-soft text-[11px] font-semibold">${esc(s.statusAssessment)}</span></td>
+    </tr>
+  `).join('');
+
+  // 2. Bento Cleanliness + KPI Rings
+  document.getElementById('bentoCleanPct').textContent = `${cleanRetentionPct}%`;
+  document.getElementById('bentoCleanSub').textContent = `${fmt(m.totalOrders)} dòng hợp lệ · Đổi trả ${m.returnRatePercent}%`;
+
+  const ring = (title, sub, pct, color) => {
+    const pClamped = Math.max(0, Math.min(100, Math.round(pct)));
+    const circ = 2 * Math.PI * 18;
+    const off = circ * (1 - pClamped / 100);
+    return `<div class="flex items-center justify-between">
+      <div><div class="text-[12.5px] font-bold text-ink">${title}</div><div class="text-[11px] text-brown-soft">${sub}</div></div>
+      <div class="relative w-12 h-12 flex items-center justify-center flex-shrink-0">
+        <svg viewBox="0 0 44 44" class="w-12 h-12 -rotate-90">
+          <circle cx="22" cy="22" r="18" fill="none" stroke="#F3ECE2" stroke-width="5"/>
+          <circle cx="22" cy="22" r="18" fill="none" stroke="${color}" stroke-width="5" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" stroke-linecap="round"/>
+        </svg>
+        <span class="absolute text-[10.5px] font-extrabold text-ink">${pClamped}%</span>
+      </div>
+    </div>`;
+  };
+  document.getElementById('kpiRingsBox').innerHTML =
+    ring('Tỷ lệ đơn hoàn tất', 'Trên tổng giao dịch sạch', completedRatePct, '#DD9E5E') +
+    ring(m.hasCostData ? 'Biên lợi nhuận gộp' : 'Độ phủ giá vốn thực', m.hasCostData ? 'Hiệu suất sinh lời' : 'Chưa có giá vốn', m.hasCostData ? m.grossMarginPercent : 0, '#3D7A52') +
+    ring('Tỷ lệ giữ lại dữ liệu sạch', 'Sau khử trùng & lọc hủy', cleanRetentionPct, '#664F41');
+
+  // 3. Grouped Bar Chart (Store Net Revenue vs Gross/Cost in Triệu VNĐ)
+  const gStores = stores.slice(0, 6);
+  const barBox = document.getElementById('groupedBarChartBox');
+  if (!gStores.length) { barBox.innerHTML = '<div class="py-10 text-center text-brown-soft">Chưa có dữ liệu đơn vị.</div>'; }
+  else {
+    const W = 620, H = 220, pl = 42, pr = 16, pt = 14, pb = 32;
+    const vals = gStores.map(s => [s.netRevenue / 1e6, (s.netRevenue + (m.hasCostData ? 0 : 0)) / 1e6]);
+    const maxM = Math.max(...gStores.map(s => Math.max(s.netRevenue, m.hasCostData ? s.grossProfit + (s.netRevenue - s.grossProfit) : s.netRevenue) / 1e6), 1);
+    const gw = (W - pl - pr) / gStores.length;
+    const bw = Math.min(24, gw * 0.28);
+    const y = v => pt + (H - pt - pb) * (1 - v / maxM);
+    const barsSvg = gStores.map((s, i) => {
+      const cx = pl + gw * i + gw / 2;
+      const v1 = s.netRevenue / 1e6;
+      const v2 = m.hasCostData ? (s.netRevenue - s.grossProfit) / 1e6 : v1;
+      const y1 = y(v1), y2 = y(v2);
+      return `<rect x="${(cx - bw - 3).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw}" height="${Math.max(2, H - pb - y1).toFixed(1)}" rx="6" fill="#DD9E5E"/>
+              <rect x="${(cx + 3).toFixed(1)}" y="${y2.toFixed(1)}" width="${bw}" height="${Math.max(2, H - pb - y2).toFixed(1)}" rx="6" fill="#664F41"/>
+              <text x="${cx.toFixed(1)}" y="${H - 10}" font-size="10.5" font-weight="600" text-anchor="middle" fill="#664F41">${esc(s.storeName.slice(0, 12))}</text>`;
+    }).join('');
+    barBox.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto">
+      <line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="rgba(102,79,65,0.2)"/>
+      <text x="${pl-6}" y="${pt+8}" font-size="10" text-anchor="end" fill="#90735F">${maxM.toFixed(1)}</text>
+      <text x="${pl-6}" y="${(pt+H-pb)/2}" font-size="10" text-anchor="end" fill="#90735F">${(maxM/2).toFixed(1)}</text>
+      <text x="${pl-6}" y="${H-pb}" font-size="10" text-anchor="end" fill="#90735F">0</text>
+      ${barsSvg}
+    </svg>`;
+  }
+
+  // 4. Smooth Area Chart (Profit or Net Revenue by Store / Time)
+  const areaPts = gStores.length >= 2
+    ? gStores.map(s => ({ lbl: s.storeName, v: (m.hasCostData ? s.grossProfit : s.netRevenue) / 1e6 }))
+    : (d.timeSeries || []).map(t => ({ lbl: t.label, v: t.netRevenue / 1e6 }));
+  document.getElementById('areaChartTitle').textContent = m.hasCostData ? 'Xu Hướng Lợi Nhuận Gộp Theo Đơn Vị' : 'Xu Hướng Doanh Thu Thuần Theo Đơn Vị';
+  const aBox = document.getElementById('smoothAreaChartBox');
+  if (areaPts.length < 2) { aBox.innerHTML = '<div class="py-10 text-center text-brown-soft">Cần tối thiểu 2 điểm dữ liệu để vẽ đường xu hướng.</div>'; }
+  else {
+    const W = 500, H = 200, pl = 42, pr = 18, pt = 18, pb = 28;
+    const maxA = Math.max(...areaPts.map(x => x.v), 1), minA = Math.min(...areaPts.map(x => x.v), 0), spanA = Math.max(maxA - minA, 0.1);
+    const x = i => pl + i * (W - pl - pr) / (areaPts.length - 1);
+    const y = v => pt + (H - pt - pb) * (1 - (v - minA) / spanA);
+    const pts = areaPts.map((ptItem, i) => `${x(i).toFixed(1)},${y(ptItem.v).toFixed(1)}`).join(' ');
+    const areaPoly = `${x(0).toFixed(1)},${H-pb} ${pts} ${x(areaPts.length-1).toFixed(1)},${H-pb}`;
+    const dots = areaPts.map((ptItem, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(ptItem.v).toFixed(1)}" r="4" fill="#FCF8F2" stroke="#3D7A52" stroke-width="2.5"/><text x="${x(i).toFixed(1)}" y="${H-8}" font-size="10" text-anchor="middle" fill="#664F41">${esc(ptItem.lbl.slice(0,10))}</text>`).join('');
+    aBox.innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto">
+      <defs><linearGradient id="bentoAreaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3D7A52" stop-opacity="0.28"/><stop offset="100%" stop-color="#3D7A52" stop-opacity="0.02"/></linearGradient></defs>
+      <line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="rgba(102,79,65,0.2)"/>
+      <polygon points="${areaPoly}" fill="url(#bentoAreaGrad)"/>
+      <polyline points="${pts}" fill="none" stroke="#3D7A52" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <text x="${pl-6}" y="${pt+8}" font-size="10" text-anchor="end" fill="#90735F">${maxA.toFixed(1)}</text>
+      <text x="${pl-6}" y="${H-pb}" font-size="10" text-anchor="end" fill="#90735F">${minA.toFixed(1)}</text>
+      ${dots}
+    </svg>`;
+  }
+
+  // 5. Donut Chart (Product Share)
+  const dBox = document.getElementById('donutChartBox');
+  const top5 = prods.slice(0, 5);
+  const donutCols = ['#DD9E5E', '#3D7A52', '#664F41', '#C84B4B', '#657DC4'];
+  if (!top5.length || m.totalNetRevenue <= 0) { dBox.innerHTML = '<div class="py-10 text-center text-brown-soft w-full">Chưa đủ dữ liệu danh mục sản phẩm.</div>'; }
+  else {
+    const circ = 2 * Math.PI * 46;
+    let offset = 0;
+    const segs = top5.map((pr, i) => {
+      const pct = Math.max(0, pr.netRevenue / m.totalNetRevenue);
+      const len = pct * circ;
+      const svgSeg = `<circle cx="64" cy="64" r="46" fill="none" stroke="${donutCols[i%donutCols.length]}" stroke-width="18" stroke-dasharray="${len.toFixed(1)} ${circ.toFixed(1)}" stroke-dashoffset="${(-offset).toFixed(1)}" transform="rotate(-90 64 64)"/>`;
+      offset += len;
+      return { svgSeg, name: pr.productName, pct: (pct * 100).toFixed(1), color: donutCols[i%donutCols.length] };
+    });
+    dBox.innerHTML = `
+      <svg viewBox="0 0 128 128" class="w-40 h-40 flex-shrink-0">${segs.map(s => s.svgSeg).join('')}</svg>
+      <div class="flex-1 w-full space-y-2 text-[12.5px]">
+        ${segs.map(s => `<div class="flex items-center justify-between"><span class="flex items-center gap-2 font-semibold text-ink"><span class="w-2.5 h-2.5 rounded-full" style="background:${s.color}"></span>${esc(s.name)}</span><strong class="tabular-nums">${s.pct}%</strong></div>`).join('')}
+      </div>`;
+  }
+
+  // Anomalies
+  const anom = d.anomalies || [];
+  document.getElementById('anomaliesBox').innerHTML = anom.map(a => `
+    <div class="p-3 rounded-xl bg-amberx/10 border border-amberx/25 text-[12px]">
+      <strong>${esc(a.dimension || a.title || a.type)}</strong> — ${esc(a.metricValue || a.evidence || '')} <span class="text-brown-soft italic">(${esc(a.rootCause || a.cause || '')})</span>
+    </div>
+  `).join('');
+}
+
+async function submitAnalystQuery() {
+  const inp = document.getElementById('analystQueryInput');
+  const q = inp.value.trim(); if (!q) return;
+  inp.value = '';
+  const th = document.getElementById('chatThread');
+  th.insertAdjacentHTML('beforeend', `<div class="text-right"><span class="inline-block bg-brown text-canvas px-3 py-1.5 rounded-xl">${esc(q)}</span></div>`);
+  const r = await (await fetch('/api/analyze/ask-copilot', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: q }) })).json();
+  th.insertAdjacentHTML('beforeend', `<div><span class="inline-block bg-white border border-brown/10 px-3 py-2 rounded-xl">${esc(r.answer || r.message)}</span></div>`);
+  th.scrollTop = th.scrollHeight;
+}
+
+async function evaluateAnalysis(approved) {
+  const res = await fetch('/api/analyze/evaluate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ approved }) });
+  const r = await res.json();
+  await loadStatus();
+  toast(r.message, 'success');
+}
+
+// ---------- STEP 4: PREVIEW CENTER & EXPORTS ----------
+async function loadPreviewCenter() {
+  const pv = await (await fetch('/api/export/preview')).json();
+  document.getElementById('exportSyncTitle').textContent = `Ngọc Linh Data Studio · Phiên bản #${pv.dataVersion || 1}`;
+  document.getElementById('exportSyncMeta').textContent = `Nguồn: ${pv.sourceName} · ${fmt(pv.excel.cleanRecords)} bản ghi sạch · Cập nhật: ${pv.processedAt || pv.generatedAt} · ${pv.isVerified ? 'Đã phê duyệt' : 'Chưa phê duyệt'}`;
+  analysis = pv.analysis;
+  await loadExcelPreview(currentExcelSheet, 1);
+  renderWordPreview();
+  loadHtmlPreview();
+}
+
+function switchPreviewTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.getElementById('tabExcel').classList.toggle('hidden', tab !== 'excel');
+  document.getElementById('tabWord').classList.toggle('hidden', tab !== 'word');
+  document.getElementById('tabHtml').classList.toggle('hidden', tab !== 'html');
+  if (tab === 'word') renderWordPreview();
+  if (tab === 'html') {
+    if (!analysis) {
+      fetch('/api/analyze/dashboard').then(r => r.ok ? r.json() : null).then(d => { if (d) { analysis = d; renderTabHtmlSummary(); } });
+    } else {
+      renderTabHtmlSummary();
+    }
+  }
+}
+
+async function loadExcelPreview(sheet, page) {
+  currentExcelSheet = sheet;
+  excelPage = Math.max(1, page);
+  document.querySelectorAll('.ex-sheet-btn').forEach(b => {
+    const active = b.textContent.trim() === sheet;
+    b.className = 'ex-sheet-btn px-3 py-1.5 rounded-xl text-[11.5px] font-bold ' + (active ? 'bg-brown text-canvas' : 'bg-soft text-brown');
+  });
+  const q = encodeURIComponent(document.getElementById('excelSearchInput').value || '');
+  const d = await (await fetch(`/api/export/excel-preview?sheet=${encodeURIComponent(sheet)}&page=${excelPage}&pageSize=40&search=${q}`)).json();
+  excelPage = d.page || 1;
+  document.getElementById('excelPageInfo').textContent = `Sheet ${d.sheet} · Trang ${d.page}/${d.totalPages} (${fmt(d.total)} dòng)`;
+  document.getElementById('excelPreviewHead').innerHTML = `<tr>${(d.headers || []).map(h => `<th class="py-2.5 px-3 text-left text-[11px] font-bold text-brown uppercase whitespace-nowrap">${esc(h)}</th>`).join('')}</tr>`;
+  document.getElementById('excelPreviewBody').innerHTML = (d.rows || []).map(r => `<tr class="border-b border-brown/5 hover:bg-shell/50">${r.map(c => `<td class="py-2 px-3 whitespace-nowrap">${esc(c)}</td>`).join('')}</tr>`).join('') || '<tr><td class="p-6 text-center text-brown-soft">Không có dữ liệu</td></tr>';
+}
+
+function openWordFullscreen() {
+  const html = document.getElementById('wordA4Container').innerHTML;
+  if (!html) return;
+  const w = window.open('', '_blank');
+  w.document.open();
+  w.document.write(`<!DOCTYPE html><html lang="vi"><head><meta charset="UTF-8"><title>Executive BI Report Preview</title><style>body{background:#F3ECE2;padding:28px;margin:0}.a4-page{max-width:794px;margin:0 auto 24px;background:#fff;padding:48px 56px;box-shadow:0 10px 30px rgba(0,0,0,.12);font-family:'Times New Roman',serif;line-height:1.55;color:#111}@media print{body{background:#fff;padding:0}.a4-page{box-shadow:none;page-break-after:always}}</style></head><body>${html}</body></html>`);
+  w.document.close();
+}
+
+function renderWordPreview() {
+  if (!analysis) return;
+  const m = analysis.overallMetrics;
+  const p = analysis.pricingAnalysis || {};
+  const sch = analysis.schema || {};
+  const stores = analysis.storePerformance || [];
+  const prods = (analysis.productPerformance || []).slice(0, 10);
+  const chans = analysis.channelBreakdown || [];
+  const recs = analysis.structuredRecommendations || [];
+  const ts = analysis.timeSeries || [];
+  const dateSpan = ts.length ? `${ts[0].label} – ${ts[ts.length - 1].label}` : new Date().toLocaleDateString('vi-VN');
+  const tblStyle = 'width:100%;border-collapse:collapse;font-size:12.5px;margin:10px 0 16px';
+  const th = 'padding:6px 8px;border:1px solid #bbb;background:#F3ECE2;text-align:left';
+  const thr = 'padding:6px 8px;border:1px solid #bbb;background:#F3ECE2;text-align:right';
+  const td = 'padding:6px 8px;border:1px solid #ccc';
+  const tdr = 'padding:6px 8px;border:1px solid #ccc;text-align:right';
+  const h2 = 'font-size:16px;font-weight:bold;border-bottom:1.5px solid #664F41;padding-bottom:4px;margin:20px 0 10px;color:#3C4430';
+
+  document.getElementById('wordA4Container').innerHTML = `
+    <!-- TRANG BÌA -->
+    <div class="a4-page text-center">
+      <div style="font-size:14px;letter-spacing:2px;color:#664F41;font-weight:bold;margin-top:36px">NGỌC LINH DATA STUDIO</div>
+      <div style="font-size:12px;color:#90735F;font-weight:bold;margin-top:4px">EXECUTIVE BUSINESS INTELLIGENCE REPORT</div>
+      <div style="font-size:11px;color:#777;margin-bottom:48px">BI Data Cleansing &amp; Analytics Workbench</div>
+      <h1 style="font-size:24px;font-weight:bold;margin:24px 0 12px;color:#3C4430">BÁO CÁO PHÂN TÍCH KINH DOANH VÀ HIỆU QUẢ HOẠT ĐỘNG</h1>
+      <p style="font-size:14px;color:#333">Đơn vị / Bộ dữ liệu: <strong>${esc(status.step1_source)}</strong></p>
+      <p style="font-size:13px;color:#555">Thời gian phân tích: ${esc(dateSpan)} · Quy mô: ${fmt(m.totalOrders)} bản ghi hợp lệ / ${fmt(status.step1_count)} bản ghi gốc</p>
+      <p style="font-size:12.5px;color:#664F41;margin-top:36px">Phiên bản báo cáo: #${status.dataVersion || 1} · Trạng thái: ${status.step2_verified ? 'Đã kiểm duyệt' : 'Chờ duyệt'}</p>
+    </div>
+
+    <!-- MỤC LỤC & PHẦN 2: EXECUTIVE SUMMARY -->
+    <div class="a4-page">
+      <h2 style="${h2}">MỤC LỤC BÁO CÁO (10 PHẦN CHUẨN BAN ĐIỀU HÀNH)</h2>
+      <ol style="font-size:13px;padding-left:20px;line-height:1.75;margin-bottom:20px">
+        <li>Trang bìa &amp; Thông tin kiểm duyệt</li>
+        <li>Executive Summary – Tóm tắt điều hành (Giải đáp 5 câu hỏi)</li>
+        <li>Tổng quan dữ liệu &amp; Data Quality Assessment</li>
+        <li>Hệ thống KPI &amp; Hiệu quả kinh doanh</li>
+        <li>Phân tích chuyên sâu (Doanh thu, Sản phẩm, Chi nhánh, Kênh, Khách hàng)</li>
+        <li>Business Insights – 6 khối Insight quản trị</li>
+        <li>Khuyến nghị chiến lược &amp; Giải pháp quản trị</li>
+        <li>Kế hoạch hành động 3 giai đoạn (0–30 / 31–90 / &gt;90 ngày)</li>
+        <li>Kết luận &amp; 3 Quyết định ưu tiên cho Ban điều hành</li>
+        <li>Phụ lục &amp; Từ điển dữ liệu</li>
+      </ol>
+
+      <h2 style="${h2}">PHẦN 2. EXECUTIVE SUMMARY – TÓM TẮT ĐIỀU HÀNH</h2>
+      <p style="font-size:13px">${esc(analysis.executiveSummary)}</p>
+      <table style="${tblStyle}">
+        <thead><tr><th style="${th}">Chỉ tiêu điều hành</th><th style="${thr}">Giá trị thực tế</th><th style="${th}">Ghi chú</th></tr></thead>
+        <tbody>
+          <tr><td style="${td}">Tổng doanh thu gộp (GMV)</td><td style="${tdr}"><strong>${fmt(m.totalGrossRevenue)} đ</strong></td><td style="${td}">Chiết khấu: ${fmt(m.TotalDiscountAmount ?? m.totalDiscountAmount)} đ (${p.averageDiscountRate || 0}%)</td></tr>
+          <tr><td style="${td}">Doanh thu thuần thực tế</td><td style="${tdr}"><strong>${fmt(m.totalNetRevenue)} đ</strong></td><td style="${td}">Trên ${fmt(m.totalOrders)} bản ghi sạch</td></tr>
+          <tr><td style="${td}">Lợi nhuận gộp &amp; Biên LN</td><td style="${tdr}"><strong>${m.hasCostData ? fmt(m.totalGrossProfit) + ' đ (' + m.grossMarginPercent + '%)' : '—'}</strong></td><td style="${td}">${m.hasCostData ? 'Giá vốn: ' + fmt(m.totalCost) + ' đ' : ''}</td></tr>
+          <tr><td style="${td}">Giá trị đơn trung bình (AOV)</td><td style="${tdr}"><strong>${fmt(p.averageOrderValue)} đ</strong></td><td style="${td}">Sản lượng: ${fmt(analysis.totalUnitsSold || 0)} đơn vị</td></tr>
+          <tr><td style="${td}">Tỷ lệ hoàn trả / Hủy đơn</td><td style="${tdr}"><strong>${m.returnRatePercent}% / ${m.cancelRatePercent}%</strong></td><td style="${td}">Ảo đã chặn: ${fmt(m.preventedOvercountValue)} đ</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- PHẦN 3 & 4: CHẤT LƯỢNG DỮ LIỆU & HỆ THỐNG KPI -->
+    <div class="a4-page">
+      <h2 style="${h2}">PHẦN 3. TỔNG QUAN DỮ LIỆU &amp; DATA QUALITY ASSESSMENT</h2>
+      <p style="font-size:13px">Nguồn dữ liệu: <strong>${esc(status.step1_source)}</strong> · Thời gian thu thập: ${esc(dateSpan)}. Quy trình phân tách rõ Dữ liệu gốc (${fmt(status.step1_count)} dòng), Dữ liệu loại trừ/hủy và Dữ liệu sạch đưa vào phân tích (${fmt(m.totalOrders)} dòng).</p>
+
+      <h2 style="${h2}">PHẦN 4. HỆ THỐNG KPI KÍCH HOẠT THEO CẤU TRÚC DỮ LIỆU</h2>
+      <table style="${tblStyle}">
+        <thead><tr><th style="${th}">Tên chỉ số KPI</th><th style="${thr}">Giá trị</th><th style="${th}">Công thức tính</th></tr></thead>
+        <tbody>
+          <tr><td style="${td}">Tổng doanh thu gộp (GMV)</td><td style="${tdr}">${fmt(m.totalGrossRevenue)} đ</td><td style="${td}">∑(SL × Đơn giá) đơn bán</td></tr>
+          <tr><td style="${td}">Doanh thu thuần thực tế</td><td style="${tdr}">${fmt(m.totalNetRevenue)} đ</td><td style="${td}">GMV - Chiết khấu - Hoàn trả</td></tr>
+          <tr><td style="${td}">Giá trị đơn trung bình (AOV)</td><td style="${tdr}">${fmt(p.averageOrderValue)} đ</td><td style="${td}">Doanh thu thuần / Số đơn bán</td></tr>
+          ${m.hasCostData ? `<tr><td style="${td}">Lợi nhuận gộp &amp; Biên LN</td><td style="${tdr}">${fmt(m.totalGrossProfit)} đ (${m.grossMarginPercent}%)</td><td style="${td}">(DT thuần - Giá vốn) / DT thuần</td></tr>` : ''}
+          ${sch.hasCustomer ? `<tr><td style="${td}">Khách hàng duy nhất / Quay lại</td><td style="${tdr}">${fmt(analysis.totalCustomers)} / ${fmt(analysis.repeatCustomers)}</td><td style="${td}">Đếm KH duy nhất &amp; &gt;1 đơn</td></tr>` : ''}
+        </tbody>
+      </table>
+
+      <h2 style="${h2}">PHẦN 5. PHÂN TÍCH CHUYÊN SÂU THEO CHI NHÁNH &amp; SẢN PHẨM</h2>
+      ${stores.length ? `<table style="${tblStyle}">
+        <thead><tr><th style="${th}">Chi nhánh</th><th style="${thr}">Số đơn</th><th style="${thr}">Doanh thu thuần</th><th style="${thr}">LN Gộp</th><th style="${thr}">Hoàn %</th></tr></thead>
+        <tbody>${stores.slice(0, 10).map(s => `<tr><td style="${td}">${esc(s.storeName)}</td><td style="${tdr}">${fmt(s.orderCount)}</td><td style="${tdr}">${fmt(s.netRevenue)} đ</td><td style="${tdr}">${m.hasCostData ? fmt(s.grossProfit) + ' đ' : '—'}</td><td style="${tdr}">${s.returnRatePercent}%</td></tr>`).join('')}</tbody>
+      </table>` : '<p style="font-size:13px">Chưa đủ dữ liệu trường Chi nhánh.</p>'}
+      ${sch.hasProduct && prods.length ? `<table style="${tblStyle}">
+        <thead><tr><th style="${th}">Top Sản phẩm</th><th style="${thr}">SL bán</th><th style="${thr}">Doanh thu thuần</th><th style="${thr}">Biên LN %</th></tr></thead>
+        <tbody>${prods.map(pr => `<tr><td style="${td}">${esc(pr.productName)}</td><td style="${tdr}">${fmt(pr.quantitySold)}</td><td style="${tdr}">${fmt(pr.netRevenue)} đ</td><td style="${tdr}">${m.hasCostData ? pr.marginPercent + '%' : '—'}</td></tr>`).join('')}</tbody>
+      </table>` : '<p style="font-size:13px">Chưa đủ dữ liệu trường Tên sản phẩm / SKU.</p>'}
+    </div>
+
+    <!-- PHẦN 6–10: INSIGHTS, GIẢI PHÁP, KẾ HOẠCH, KẾT LUẬN & PHỤ LỤC -->
+    <div class="a4-page">
+      <h2 style="${h2}">PHẦN 6. BUSINESS INSIGHTS – 6 KHỐI INSIGHT QUẢN TRỊ</h2>
+      ${recs.map((r, i) => `<p style="font-size:13px;margin-bottom:8px"><strong>${i+1}. [${esc(r.category)}] ${esc(r.title)}:</strong> ${esc(r.content)}</p>`).join('')}
+
+      <h2 style="${h2}">PHẦN 7–8. GIẢI PHÁP &amp; KẾ HOẠCH HÀNH ĐỘNG 3 GIAI ĐOẠN</h2>
+      <table style="${tblStyle}">
+        <thead><tr><th style="${th}">Giai đoạn</th><th style="${th}">Hành động trọng tâm</th><th style="${th}">Phụ trách</th><th style="${th}">KPI theo dõi</th></tr></thead>
+        <tbody>
+          <tr><td style="${td}">Ngắn hạn (0–30 ngày)</td><td style="${td}">Khóa cổng kiểm duyệt dữ liệu, xử lý ngoại lệ &amp; kiểm soát điểm nóng hoàn trả.</td><td style="${td}">CFO, Kinh doanh &amp; BI</td><td style="${td}">Sai lệch = 0%; Hoàn %</td></tr>
+          <tr><td style="${td}">Trung hạn (31–90 ngày)</td><td style="${td}">Tối ưu cơ cấu sản phẩm chủ lực &amp; hiệu quả từng chi nhánh.</td><td style="${td}">COO &amp; Quản lý CN</td><td style="${td}">Doanh thu &amp; Biên LN CN</td></tr>
+          <tr><td style="${td}">Dài hạn (&gt; 90 ngày)</td><td style="${td}">Đồng bộ 100% giá vốn thực tế &amp; tự động hóa báo cáo định kỳ.</td><td style="${td}">Kế toán &amp; Ban Giám đốc</td><td style="${td}">Độ phủ chuẩn = 100%</td></tr>
+        </tbody>
+      </table>
+
+      <h2 style="${h2}">PHẦN 9–10. KẾT LUẬN &amp; PHỤ LỤC DỮ LIỆU</h2>
+      <p style="font-size:13px">Ban điều hành cần ưu tiên: (1) Duy trì kiểm duyệt dữ liệu sạch trước khi chốt kỳ; (2) Xử lý điểm nóng hoàn trả/chiết khấu; (3) Chuẩn hóa đầy đủ trường giá vốn thực tế. Báo cáo được lập tự động bởi <strong>Ngọc Linh Data Studio</strong>.</p>
+    </div>
+  `;
+}
+
+async function loadHtmlPreview() {
+  try {
+    const d = await (await fetch('/api/export/html-preview')).json();
+    cachedHtmlPreview = d.html || '';
+  } catch {}
+  renderTabHtmlSummary();
+}
+
+function renderTabHtmlSummary() {
+  const el = document.getElementById('tabHtmlSummary');
+  if (!el || !analysis) return;
+  const m = analysis.overallMetrics;
+  const p = analysis.pricingAnalysis || {};
+  const stores = (analysis.storePerformance || []).slice(0, 6);
+  const prods = (analysis.productPerformance || []).slice(0, 6);
+  const chans = (analysis.channelBreakdown || []).slice(0, 5);
+  const ts = analysis.timeSeries || [];
+
+  // Line / Trend Chart SVG (fallback to Store Trend if 1-day dataset)
+  const linePts = ts.length >= 2
+    ? ts.map(t => ({ lbl: t.label, v: t.netRevenue }))
+    : stores.map(s => ({ lbl: s.storeName, v: s.netRevenue }));
+  let lineSvg = '<div class="py-8 text-center text-brown-soft text-[12px]">Chưa có dữ liệu xu hướng.</div>';
+  if (linePts.length >= 2) {
+    const W = 500, H = 180, pl = 44, pr = 14, pt = 14, pb = 24;
+    const max = Math.max(...linePts.map(x => x.v), 1), min = Math.min(...linePts.map(x => x.v), 0), span = Math.max(max - min, 1);
+    const x = i => pl + i * (W - pl - pr) / (linePts.length - 1);
+    const y = v => pt + (H - pt - pb) * (1 - (v - min) / span);
+    const pts = linePts.map((t, i) => `${x(i).toFixed(1)},${y(t.v).toFixed(1)}`).join(' ');
+    const area = `${x(0).toFixed(1)},${H-pb} ${pts} ${x(linePts.length-1).toFixed(1)},${H-pb}`;
+    const dots = linePts.map((t, i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(t.v).toFixed(1)}" r="3.5" fill="#FCF8F2" stroke="#664F41" stroke-width="2"/>`).join('');
+    lineSvg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto"><defs><linearGradient id="p4g" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#DD9E5E" stop-opacity="0.35"/><stop offset="100%" stop-color="#DD9E5E" stop-opacity="0.02"/></linearGradient></defs><line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="rgba(102,79,65,0.2)"/><polygon points="${area}" fill="url(#p4g)"/><polyline points="${pts}" fill="none" stroke="#664F41" stroke-width="2.5"/>${dots}<text x="${pl-5}" y="${pt+8}" font-size="9.5" text-anchor="end" fill="#90735F">${(max/1e6).toFixed(1)}M</text><text x="${pl-5}" y="${H-pb}" font-size="9.5" text-anchor="end" fill="#90735F">${(min/1e6).toFixed(1)}M</text></svg>`;
+  }
+
+  // Store Grouped Bar SVG
+  let barSvg = '<div class="py-8 text-center text-brown-soft text-[12px]">Chưa có dữ liệu chi nhánh.</div>';
+  if (stores.length) {
+    const W = 500, H = 180, pl = 40, pr = 12, pt = 14, pb = 26;
+    const maxS = Math.max(...stores.map(s => s.netRevenue / 1e6), 1);
+    const gw = (W - pl - pr) / stores.length, bw = Math.min(24, gw * 0.35);
+    const y = v => pt + (H - pt - pb) * (1 - v / maxS);
+    const rects = stores.map((s, i) => {
+      const cx = pl + gw * i + gw / 2;
+      const y1 = y(s.netRevenue / 1e6);
+      return `<rect x="${(cx - bw/2).toFixed(1)}" y="${y1.toFixed(1)}" width="${bw}" height="${Math.max(2, H - pb - y1).toFixed(1)}" rx="5" fill="#664F41"/><text x="${cx.toFixed(1)}" y="${H-8}" font-size="9.5" text-anchor="middle" fill="#664F41">${esc(s.storeName.slice(0,10))}</text>`;
+    }).join('');
+    barSvg = `<svg viewBox="0 0 ${W} ${H}" class="w-full h-auto"><line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="rgba(102,79,65,0.2)"/><text x="${pl-5}" y="${pt+8}" font-size="9.5" text-anchor="end" fill="#90735F">${maxS.toFixed(1)}M</text>${rects}</svg>`;
+  }
+
+  // Donut Chart SVG (Products)
+  const cols = ['#DD9E5E', '#3D7A52', '#664F41', '#C84B4B', '#657DC4'];
+  const circ = 2 * Math.PI * 42;
+  let off = 0;
+  const dSegs = prods.slice(0, 5).map((pr, i) => {
+    const ratio = m.totalNetRevenue > 0 ? Math.max(0, pr.netRevenue / m.totalNetRevenue) : 0;
+    const len = ratio * circ;
+    const svg = `<circle cx="56" cy="56" r="42" fill="none" stroke="${cols[i%cols.length]}" stroke-width="16" stroke-dasharray="${len.toFixed(1)} ${circ.toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}" transform="rotate(-90 56 56)"/>`;
+    off += len;
+    return { svg, name: pr.productName, pct: (ratio * 100).toFixed(1), val: pr.netRevenue, color: cols[i%cols.length] };
+  });
+
+  el.innerHTML = `
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div class="hero-arbora rounded-2xl p-4 text-canvas">
+        <div class="text-[10.5px] font-bold uppercase text-amberx">Doanh thu thuần</div>
+        <div class="text-[20px] font-extrabold mt-1 tabular-nums">${fmt(m.totalNetRevenue)} đ</div>
+        <div class="text-[11px] text-canvas/80">GMV: ${fmt(m.totalGrossRevenue)} đ</div>
+      </div>
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[10.5px] font-bold uppercase text-brown-soft">Lợi nhuận &amp; Biên LN</div>
+        <div class="text-[20px] font-extrabold mt-1 tabular-nums text-okx">${m.hasCostData ? fmt(m.totalGrossProfit) + ' đ' : '—'}</div>
+        <div class="text-[11px] text-brown-soft">${m.hasCostData ? `Biên LN: ${m.grossMarginPercent}% · Giá vốn: ${fmt(m.totalCost)} đ` : ''}</div>
+      </div>
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[10.5px] font-bold uppercase text-brown-soft">Đơn hàng &amp; AOV</div>
+        <div class="text-[20px] font-extrabold mt-1 tabular-nums">${fmt(m.totalOrders)} đơn</div>
+        <div class="text-[11px] text-brown-soft">AOV: ${fmt(p.averageOrderValue)} đ</div>
+      </div>
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[10.5px] font-bold uppercase text-brown-soft">Hoàn trả &amp; Tăng trưởng</div>
+        <div class="text-[20px] font-extrabold mt-1 tabular-nums">${m.returnRatePercent}% / ${analysis.growthRatePercent}%</div>
+        <div class="text-[11px] text-brown-soft">Hủy: ${m.cancelRatePercent}% · CK: ${p.averageDiscountRate || 0}%</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[13px] font-extrabold mb-2">Xu hướng Doanh thu thuần theo thời gian</div>
+        ${lineSvg}
+      </div>
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[13px] font-extrabold mb-2">So sánh Doanh thu thuần theo Chi nhánh (Triệu VNĐ)</div>
+        ${barSvg}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[13px] font-extrabold mb-3">Cơ cấu Doanh thu theo Sản phẩm (Donut Chart)</div>
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <svg viewBox="0 0 112 112" class="w-32 h-32 flex-shrink-0">${dSegs.map(s=>s.svg).join('')}</svg>
+          <div class="flex-1 w-full space-y-1.5 text-[12px]">
+            ${dSegs.map(s => `<div class="flex justify-between"><span><span class="inline-block w-2.5 h-2.5 rounded-full mr-1.5" style="background:${s.color}"></span>${esc(s.name)}</span><strong>${s.pct}%</strong></div>`).join('') || '<div class="text-brown-soft">Chưa có dữ liệu sản phẩm.</div>'}
+          </div>
+        </div>
+      </div>
+      <div class="bg-canvas rounded-2xl p-4 border border-brown/10">
+        <div class="text-[13px] font-extrabold mb-2">Tỷ trọng theo Kênh bán hàng</div>
+        <div class="space-y-2 text-[12px]">
+          ${chans.map(c => `<div><div class="flex justify-between mb-1"><strong>${esc(c.channelName)}</strong><span>${fmt(c.netRevenue)} đ (${c.revenueSharePercent}%)</span></div><div class="h-2 rounded-full bg-soft"><div class="h-full rounded-full bg-amberx" style="width:${Math.max(3, c.revenueSharePercent)}%"></div></div></div>`).join('') || '<div class="text-brown-soft">Chưa có dữ liệu kênh.</div>'}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function openHtmlFullscreen() {
+  if (!cachedHtmlPreview) return;
+  const w = window.open('', '_blank');
+  w.document.open();
+  w.document.write(cachedHtmlPreview);
+  w.document.close();
+}
+
+async function downloadFile(url, filename) {
+  try {
+    toast(`Đang tạo ${filename}...`);
+    const res = await fetch(url);
+    if (!res.ok) { const e = await res.json(); return toast(e.message || 'Lỗi tải tệp', 'error'); }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    toast(`Đã tải xuống ${filename}`, 'success');
+  } catch (e) { toast('Lỗi tải tệp: ' + e.message, 'error'); }
+}
+
+// Drag & drop + Init
+const dz = document.getElementById('dropzone');
+['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.add('dz-active'); }));
+['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); dz.classList.remove('dz-active'); }));
+dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFileSelect(f); });
+
+(async function initApp() {
+  await loadStatus();
+  if (status.step1_connected) await refreshStep1Summary();
+})();
+</script>
+</body>
+</html>
