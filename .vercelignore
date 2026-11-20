@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+output/
+*.csproj
+*.cs
+*.bat
+*.sln
+README.md
+

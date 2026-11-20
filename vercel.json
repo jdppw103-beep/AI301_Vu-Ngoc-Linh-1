@@ -1,6 +1,13 @@
 {
-  "buildCommand": "",
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": null,
   "outputDirectory": "wwwroot",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/((?!engine\\.js|vercel-adapter\\.js).*)",
+      "destination": "/index.html"
+    }
+  ]
 }
-
